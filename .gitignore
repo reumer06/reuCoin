@@ -1,5 +1,7 @@
 /target
-/temp.cpp
 /Cargo.lock
 /Cargo.toml
 /.idea
+src
+Cargo.toml
+Cargo.lock
