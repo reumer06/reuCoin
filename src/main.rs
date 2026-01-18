@@ -1,19 +1,56 @@
-use std::f64::consts::E; // Binomial Random Walk
+use std::env;
+use std::process::exit;
 
-fn attacker_success_possibility(q: f64,z : i32) -> f64{
-    let p = 1.0 - q;
-    let lamda =  z as f64 * (q/p);
-    let mut sum = 1.0;
-    for k in 0..=z {
-        let mut poisson  = E.powf(-lamda);
-        for i in 1..=k {
-            poisson *=lamda / i as f64;
-        }
-        sum -= poisson * (1.0 - (q/p).powi(z - k));
+fn inverse(c : char) -> String{
+    if c.is_uppercase(){
+        c.to_lowercase().collect()
+    } else {
+        c.to_uppercase().collect()
     }
-    sum
 }
 
-fn main() {
-    attacker_success_possibility(67.69,12);
+fn main(){
+    let args: Vec<String>  = env::args().collect();
+    if args.len() != 3 {
+        eprintln!("Usage: {} <op> <text>",args[0]);
+        exit(1);
+    }
+    let op = &args[1];
+    let text = &args[2];
+
+    println!("op : {op}");
+    println!("text: {text}");
+     
+    let res = match op.as_str() {
+        "reverse" => text.chars().rev().collect::<String>(),
+        "uppercase" => text.to_uppercase(),
+        "invert" => text 
+            .chars()
+            .map(inverse)
+            .collect::<String>(),
+        "leet" => text
+            .chars()
+            .map(|c| match c{
+                'a' | 'A' => '4',
+                'e' | 'E' => '3',
+                'i' | 'I' => '2',
+                'o' | 'O' => '1',
+                'u' | 'U' => '0',
+                's' | 'S' => '5',
+                't' | 'T' => '7',
+                    _ => c,
+            })
+            .collect::<String>(),
+        "no spaces" => text 
+            .chars()
+            .filter(|c| !c.is_whitespace())
+            .collect::<String>(),
+        "acronym" => text 
+            .split_whitespace()
+            .map(|word| word.chars().next().unwrap())
+            .collect::<String>()
+            .to_uppercase(),
+        &_ => todo!(),
+    };
+    println!("{res}")
 }
