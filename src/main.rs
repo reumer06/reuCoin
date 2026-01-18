@@ -1,14 +1,6 @@
 use std::env;
 use std::process::exit;
 
-fn inverse(c : char) -> String{
-    if c.is_uppercase(){
-        c.to_lowercase().collect()
-    } else {
-        c.to_uppercase().collect()
-    }
-}
-
 fn main(){
     let args: Vec<String>  = env::args().collect();
     if args.len() != 3 {
@@ -26,7 +18,13 @@ fn main(){
         "uppercase" => text.to_uppercase(),
         "invert" => text 
             .chars()
-            .map(inverse)
+            .map(|c| {
+                if c.is_uppercase() {
+                    c.to_lowercase().to_string()
+                } else {
+                    c.to_uppercase().to_string()
+                }
+            })
             .collect::<String>(),
         "leet" => text
             .chars()
