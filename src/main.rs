@@ -1,33 +1,19 @@
-
-
-struct Hello;
-
-trait SayHi {
-    fn say_hi(self);
+struct Cat {
+    name : String,
 }
 
-impl SayHi for Hello {
-    fn say_hi(self) {
-        println!("this is from without reference");
+trait Animal {
+    fn make_sound(&self);
+}
+
+impl Animal for Cat {
+    fn make_sound(&self) {
+        println!("name of the car is {} and he does meowwwww",self.name);
     }
 }
-
-impl SayHi for &Hello {
-    fn say_hi(self) {
-        println!("this is from the reference");
-    }
-}
-
-impl SayHi for &&Hello {
-    fn say_hi(self) {
-        println!("this is from the reference reference");
-    }
-}
-
 fn main() {
-    let hello = Hello;
-    // hello.say_hi();
-    (&hello).say_hi();
-    (&&hello).say_hi();
-    hello.say_hi();
+    let cat = Cat{
+        name: String::from("mylo"),
+    };
+    cat.make_sound();
 }
