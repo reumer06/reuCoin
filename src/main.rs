@@ -1,13 +1,11 @@
-
-fn max_ref<'qa>(left: &'qa i32,right: &'qa i32) -> &'qa i32 { // lifetime annotations
-    if *left < *right{
-        right
-    } else {
-        left
-    }
+struct  Holder <'a> {
+    reference : &'a str
+}
+static GREETING: &'static str  = "hello world";
+fn make_holder() -> Holder<'static>  {
+    // let text = String::from("the code");
+    Holder {reference : &GREETING}
 }
 fn main(){
-
-    let i = 32; let y = 43;
-    println!("{}",max_ref(&i,&y));
+    println!("{}",make_holder().reference);
 }
