@@ -1,11 +1,33 @@
-struct  Holder <'a> {
-    reference : &'a str
+
+
+struct Hello;
+
+trait SayHi {
+    fn say_hi(self);
 }
-static GREETING: &'static str  = "hello world";
-fn make_holder() -> Holder<'static>  {
-    // let text = String::from("the code");
-    Holder {reference : &GREETING}
+
+impl SayHi for Hello {
+    fn say_hi(self) {
+        println!("this is from without reference");
+    }
 }
-fn main(){
-    println!("{}",make_holder().reference);
+
+impl SayHi for &Hello {
+    fn say_hi(self) {
+        println!("this is from the reference");
+    }
+}
+
+impl SayHi for &&Hello {
+    fn say_hi(self) {
+        println!("this is from the reference reference");
+    }
+}
+
+fn main() {
+    let hello = Hello;
+    // hello.say_hi();
+    (&hello).say_hi();
+    (&&hello).say_hi();
+    hello.say_hi();
 }
