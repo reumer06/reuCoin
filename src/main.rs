@@ -1,16 +1,26 @@
-use std::cell::RefCell;
+struct MyStruct<'a> {
+    remainder: Option<&'a str>,
+}
 
-// Refcell is for mutation even through immutable ref.
-fn main() {
-    let data = RefCell::new(5);
-
-    let borrow = data.borrow();
-    println!("{}",*borrow);
-
-    {
-        let mut mut_borrowed = data.borrow_mut();
-        *mut_borrowed += 1;
+impl<'a> MyStruct<'a> {
+    fn first_char(&mut self) -> Option<&str> {
+        let remainder = &mut self.remainder?;
+        let c = &remainder[0..1];
+        if remainder.len() != 1 {
+            *remainder = &remainder[1..];
+            Some(c)
+        } else {
+            self.remainder.take()
+        }
     }
+}
 
-    println!("{}",data.borrow());
+fn main() {
+    let mut broken = MyStruct {
+        remainder: Some("Hello"),
+    };
+
+    for _ in 0..5 {
+        println!("{:?}", broken.first_char());
+    }
 }
