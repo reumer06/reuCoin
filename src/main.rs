@@ -1,35 +1,52 @@
-mod my_module {
-    pub mod child_module {
-        pub mod grand_child_module {
-            pub(super) fn public_in_grandchild() {  // visibility to parent; my_module
-                println!("public in granchild");
-            }
+pub struct AveragedCollection {
+    list: Vec<i32>,
+    average: f64,
+}
+impl AveragedCollection {
+    pub fn new(list: Vec<i32>) -> Self {
+        // to create a user instance or public constructor.
+        let mut fool = AveragedCollection { list, average: 0.0 };
+        fool.update_average();
+        fool
+    }
+    fn update_average(&mut self) {
+        let total: i32 = self.list.iter().sum();
+        self.average = total as f64 / self.list.len() as f64;
+    }
+    pub fn add(&mut self, value: i32) {
+        self.list.push(value);
+        self.update_average();
+    }
 
-            pub fn public_for_everyone(){   // for everyone;
-                println!("public for everyone");
-                public_in_self();
-                public_in_grandchild();
-                public_in_module();
+    pub fn remove(&mut self) -> Option<i32> {
+        let result = self.list.pop();
+        match result {
+            Some(value) => {
+                self.update_average();
+                Some(value)
             }
-            pub(self) fn public_in_self() { // to current module only; grand_child_module
-                println!("public in self");
-            }
-            pub(in crate::my_module) fn public_in_module() {    //inside my_module everyone can access it.
-                println!("public from this module");
-            }
+            None => None,
         }
     }
-    pub mod other_child {
-        pub(super) fn public_in_my_module() { // visibility to parent; my_module
-            println!("accessible from my module");
-            // super::child_module::grand_child_module::public_in_module(); --> can access it;
-        }
+    pub fn average(&self) -> f64 {
+        self.average
     }
 }
 
 fn main() {
-    use my_module::child_module::grand_child_module;
-    // use my_module::other_child;
-    // other_child::public_in_my_module(); --> this is private under other_child;
-    grand_child_module::public_for_everyone();
+    let mut collection = AveragedCollection::new(vec![1, 2, 3, 4]); // creates a object
+    println!("average: {}", collection.average());
+    collection.add(12);
+    println!("updated Average: {}", collection.average());
+
+    match collection.remove() {
+        // removes 12
+        Some(_val) => println!("removed: {_val}, new average: {}", collection.average()),
+        None => println!("empty list"),
+    }
+    // can do it both ways;
+    if let Some(_val) = collection.remove() {
+        // removes 4
+        println!("average: {}", collection.average());
+    }
 }
