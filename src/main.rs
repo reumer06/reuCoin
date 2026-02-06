@@ -1,58 +1,26 @@
-// https://doc.rust-lang.org/std/mem/union.MaybeUninit.html --> in this union are useful.
+// Uninitialized var in rust
+// more about this : https://doc.rust-lang.org/std/mem/union.MaybeUninit.html
 
-struct Sheep {naked: bool, name: &'static str}
-
-trait Animal {
-    fn new(name: &'static str)  -> Self;
-    fn name(&self)  -> &'static str;
-    fn noise(&self)  -> &'static str;
-
-    fn talk(&self){
-        println!("{} says {}",self.name(),self.noise());
-    }
-}
-
-impl Sheep {
-    fn is_naked(&self) -> bool {
-        self.naked
-    }
-
-    fn shear(&mut self){
-        if self.is_naked(){
-            println!("{} is already naked",self.name());
-        } else {
-            println!("{} gets a haircut",self.name);
-            self.naked = true;
-        }
-    }
-}
-
-impl Animal for Sheep {
-    fn new(name : &'static str) -> Sheep {
-        Sheep {name : name, naked: false}
-    }
-
-    fn name(&self) -> &'static str{
-        self.name
-    }
-
-    fn noise(&self) -> &'static str{
-        if self.naked {
-            "Baaaaaaaaaaahhhhhhhh"
-        } else {
-            "bahhhhhh!"
-        }
-    }
-
-    fn talk(&self){
-        println!("{} pauses briefly......{}",self.name,self.noise());
-    }
-}
+use std::mem::{self, MaybeUninit};
 
 fn main() {
-        let mut dolly:Sheep = Animal::new("Dolly");
+    let x: i32 = unsafe { mem::uninitialized() };
+    let y: i32 = unsafe { MaybeUninit::uninit().assume_init() };
 
-        dolly.talk();
-        dolly.shear();
-        dolly.talk();
+    let mut m = MaybeUninit::<&i32>::uninit();
+    m.write(&0);
+    let m = unsafe { m.assume_init() };
+
+    unsafe fn make_vector(out: *mut Vec<i32>){
+        unsafe {out.write(vec![1,2,3])};
+    }
+
+    let mut v = MaybeUninit::uninit();
+    unsafe {make_vector(v.as_mut_ptr());}
+
+    let v  = unsafe { v.assume_init()};
+    assert_eq!(&v,&[1,2,3]);
+
+    println!("Vector: {:?}",v);
+    println!("{x} and {y} and {m}");
 }
