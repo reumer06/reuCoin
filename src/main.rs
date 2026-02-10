@@ -1,42 +1,38 @@
-use std::fs::File;
-use std::io::Write;     // --> required for writeln!
-use std::path::Path;    // --> Require for AsRef<Path>
-use std::fmt::{Display, Formatter, Result as FmtResult};
-
-
-trait Saveable: Display {       // -> Trait with Supertrait; i.e Saveable only be implemented if you implement Display
-    fn save<P>(&self, path: P) -> std::io::Result<()>
-    where
-        P: AsRef<Path>,     // --> P: AsRef<Path> allow to pass &str, String or Path objects
-    {
-        // ? is there for error handling it will stop the entire function when something fails;
-        let mut file = File::create(path.as_ref())?;     // --> path.as_ref() converts generic P into a standard &Path;
-        writeln!(file, "{}", self.to_string())?;                   // --> converts to String because saveable requires Display;
-
-        Ok(())
-    }
-}
-
-struct User {
+struct Duck {}
+struct FormalDuck {
     name: String,
-    id: u32,
 }
-// Without this the compiler will refuse to implement Saveable;
-impl Display for User {
-    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
-        write!(f, "User: {} (ID: {})", self.name, self.id)
+
+impl FormalDuck {
+    fn new(name: String) -> Self {
+        Self { name }
     }
 }
 
-impl Saveable for User {}       // implement our Trait;
-fn main() -> std::io::Result<()> {      // -->  for io errors
-    let first_user = User {
-        name: String::from("littlejames"),
-        id: 42,
-    };
+trait Quack {
+    fn quack(&self);
+}
 
-    first_user.save("user_data.txt")?;
+impl Quack for Duck {
+    fn quack(&self) {
+        println!("Duck Quacks");
+    }
+}
 
-    println!("User info saved successful");
-    Ok(())          // returns okay if everything went well;
+impl Quack for FormalDuck {
+    fn quack(&self) {
+        println!("{} Quacks", self.name);
+    }
+}
+
+fn duck_say(quacker: &dyn Quack) {
+    // &dyn is used to create trait object;
+    // call the function instead of using <T: Quack> i.e static dispatch;
+    quacker.quack()
+}
+fn main() {
+    let duck = Duck {};
+    let formal_duck = FormalDuck::new("Dodo".to_string());
+    duck_say(&formal_duck);
+    duck_say(&duck);
 }
