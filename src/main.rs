@@ -1,38 +1,25 @@
-struct Duck {}
-struct FormalDuck {
-    name: String,
-}
+use std::ops::Add;
+// Default generic type parameters and Operator overloading;
+#[derive(Debug, PartialEq)]
 
-impl FormalDuck {
-    fn new(name: String) -> Self {
-        Self { name }
+struct Point {
+    x: i32,
+    y: i32,
+}
+impl Add for Point {
+    type Output = Point;
+
+    fn add(self, other: Point) -> Point {
+        Point {
+            x: self.x + other.x,
+            y: self.y + other.y,
+        }
     }
-}
-
-trait Quack {
-    fn quack(&self);
-}
-
-impl Quack for Duck {
-    fn quack(&self) {
-        println!("Duck Quacks");
-    }
-}
-
-impl Quack for FormalDuck {
-    fn quack(&self) {
-        println!("{} Quacks", self.name);
-    }
-}
-
-fn duck_say(quacker: &dyn Quack) {
-    // &dyn is used to create trait object;
-    // call the function instead of using <T: Quack> i.e static dispatch;
-    quacker.quack()
 }
 fn main() {
-    let duck = Duck {};
-    let formal_duck = FormalDuck::new("Dodo".to_string());
-    duck_say(&formal_duck);
-    duck_say(&duck);
+    // 0 + 5 = 5, not 3!
+    assert_eq!(
+        Point { x: 1, y: 0 } + Point { x: 2, y: 5 },
+        Point { x: 3, y: 5 } // Changed from 3 to 5
+    );
 }
