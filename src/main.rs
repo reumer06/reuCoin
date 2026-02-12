@@ -1,34 +1,53 @@
-// strongly typed language, all values need to be well-defined.rust also not like implicit conversion.
-// rustc --explain E0384
-// read only is default in rust.
-fn myfunc(mut x :  i32){
-    x *= 2;
-    println!("{x}");
-}
-fn main(){
-    // let mut x = 10;
-    // x = 5;
-    // println!("value of x is {x}");
-    //
-    // myfunc(12);
-
-    // you can do this:
-    let x = 10;
-    println!("value is {x}");
-
-    let mut x = x;
-    x +=1;
-    println!("value is {x}");
-    let mut m = String::from("bob");
-    let n = String::from("alice");
-
-    let mut m_ref = &m;
-    println!("value of string is {m_ref}");
-    m_ref = &n;
-    println!("the value of string is {m_ref}");
-    let mut string_mut = &mut m;
-    string_mut.push_str(" says hello");
-    println!("{m} \n{n}");
-
+// generics in rust are mostly traits.
+use serde::Serialize; // to convert into desired format.
+use std::marker::PhantomData; // zero-sized data, disappears at compilation;
+struct Json;
+struct Toml;
+struct Cbor;
+struct Yaml;
+trait Encode {
+    fn encode<T: Serialize>(val: T) -> String;
 }
 
+impl Encode for Json {
+    fn encode<T: Serialize>(val: T) -> String {
+        serde_json::to_string(&val).unwrap()
+    }
+}
+
+impl Encode for Toml {
+    fn encode<T: Serialize>(val: T) -> String {
+        toml::to_string(&val).unwrap()
+    }
+}
+
+impl Encode for Cbor {
+    fn encode<T: Serialize>(val: T) -> String {
+        let bytes = serde_cbor::to_vec(&val).unwrap();
+        hex::encode(bytes)
+    }
+}
+
+impl Encode for Yaml {
+    fn encode<T: Serialize>(val: T) -> String {
+        serde_yaml::to_string(&val).unwrap()
+    }
+}
+
+struct User<T: Encode> {
+    name: String,
+    age: u32,
+    _marker: PhantomData<T>, // to let know compiler T is associated with User. Otherwise we will get a compilation error;
+}
+fn main() {
+    let user: User<Json> = User {
+        name: "Alice".to_string(),
+        age: 19,
+        _marker: PhantomData,
+    };
+
+    println!(
+        "user name is {} \nthe age of the user is {}",
+        user.name, user.age
+    );
+}
