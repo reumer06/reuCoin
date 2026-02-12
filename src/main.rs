@@ -1,25 +1,34 @@
-use std::ops::Add;
-// Default generic type parameters and Operator overloading;
-#[derive(Debug, PartialEq)]
+// strongly typed language, all values need to be well-defined.rust also not like implicit conversion.
+// rustc --explain E0384
+// read only is default in rust.
+fn myfunc(mut x :  i32){
+    x *= 2;
+    println!("{x}");
+}
+fn main(){
+    // let mut x = 10;
+    // x = 5;
+    // println!("value of x is {x}");
+    //
+    // myfunc(12);
 
-struct Point {
-    x: i32,
-    y: i32,
-}
-impl Add for Point {
-    type Output = Point;
+    // you can do this:
+    let x = 10;
+    println!("value is {x}");
 
-    fn add(self, other: Point) -> Point {
-        Point {
-            x: self.x + other.x,
-            y: self.y + other.y,
-        }
-    }
+    let mut x = x;
+    x +=1;
+    println!("value is {x}");
+    let mut m = String::from("bob");
+    let n = String::from("alice");
+
+    let mut m_ref = &m;
+    println!("value of string is {m_ref}");
+    m_ref = &n;
+    println!("the value of string is {m_ref}");
+    let mut string_mut = &mut m;
+    string_mut.push_str(" says hello");
+    println!("{m} \n{n}");
+
 }
-fn main() {
-    // 0 + 5 = 5, not 3!
-    assert_eq!(
-        Point { x: 1, y: 0 } + Point { x: 2, y: 5 },
-        Point { x: 3, y: 5 } // Changed from 3 to 5
-    );
-}
+
