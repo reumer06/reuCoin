@@ -1,6 +1,8 @@
 // generics in rust are mostly traits.
 use serde::Serialize; // to convert into desired format.
 use std::marker::PhantomData; // zero-sized data, disappears at compilation;
+use std::fmt::Debug;
+
 struct Json;
 struct Toml;
 struct Cbor;
@@ -49,5 +51,17 @@ fn main() {
     println!(
         "user name is {} \nthe age of the user is {}",
         user.name, user.age
+    );
+    type DefaultUser = User<Json>; // to create an alias;
+
+    let user1 = DefaultUser {
+        name: "BOB".to_string(),
+        age: 10,
+        _marker: PhantomData,
+    };
+
+    println!(
+        "user name is {}\n,the age of the user is {}",
+        user1.name, user1.age
     );
 }
