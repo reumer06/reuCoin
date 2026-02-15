@@ -1,67 +1,72 @@
-// generics in rust are mostly traits.
-use serde::Serialize; // to convert into desired format.
-use std::marker::PhantomData; // zero-sized data, disappears at compilation;
 use std::fmt::Debug;
-
-struct Json;
-struct Toml;
-struct Cbor;
-struct Yaml;
-trait Encode {
-    fn encode<T: Serialize>(val: T) -> String;
+trait ConvertTo<T: Debug> {
+    // trait can have generic parameters which then can have trait bounds,
+    fn print_a_t(t: T) {
+        println!("{:?}", t);
+    }
+    fn convert(&self) -> T;
 }
 
-impl Encode for Json {
-    fn encode<T: Serialize>(val: T) -> String {
-        serde_json::to_string(&val).unwrap()
+trait Printable: std::fmt::Display {
+    // super trait.
+    fn print(&self) {
+        println!("{}", self);
     }
 }
 
-impl Encode for Toml {
-    fn encode<T: Serialize>(val: T) -> String {
-        toml::to_string(&val).unwrap()
+// trait can have their own associated types and const;
+trait Vehicle {
+    type Energy;
+    const WHEELS: u8;
+
+    fn energy_source(&self) -> Self::Energy;
+
+    fn print_wheels() {
+        println!("the vehicle has {} wheels", Self::WHEELS); // when const you use Self instead of self;
     }
 }
 
-impl Encode for Cbor {
-    fn encode<T: Serialize>(val: T) -> String {
-        let bytes = serde_cbor::to_vec(&val).unwrap();
-        hex::encode(bytes)
+struct FixedArray<T, const N: usize> {
+    data: [T; N],
+}
+
+trait ArrayOps<T, const N: usize> {
+    fn first(&self) -> Option<&T>;
+    fn last(&self) -> Option<&T>;
+
+    fn size(&self) -> usize {
+        // cannot return self.size() it would be recursive call;
+        N
     }
 }
 
-impl Encode for Yaml {
-    fn encode<T: Serialize>(val: T) -> String {
-        serde_yaml::to_string(&val).unwrap()
+impl<T, const N: usize> ArrayOps<T, N> for [T; N] {
+    fn first(&self) -> Option<&T> {
+        if N > 0 {
+            Some(&self[0])
+        } else {
+            None
+        }
+    }
+    fn last(&self) -> Option<&T> {
+        if N > 0 {
+            Some(&self[N - 1])
+        } else {
+            None
+        }
     }
 }
-
-struct User<T: Encode> {
-    name: String,
-    age: u32,
-    _marker: PhantomData<T>, // to let know compiler T is associated with User. Otherwise we will get a compilation error;
+struct Data {
+    age: usize,
 }
+
 fn main() {
-    let user: User<Json> = User {
-        name: "Alice".to_string(),
-        age: 19,
-        _marker: PhantomData,
-    };
+    let person = Data { age: 25 };
 
-    println!(
-        "user name is {} \nthe age of the user is {}",
-        user.name, user.age
-    );
-    type DefaultUser = User<Json>; // to create an alias;
+    let list = [person];
+    println!("array size is {}", list.size());
 
-    let user1 = DefaultUser {
-        name: "BOB".to_string(),
-        age: 10,
-        _marker: PhantomData,
-    };
-
-    println!(
-        "user name is {}\n,the age of the user is {}",
-        user1.name, user1.age
-    );
+    if let Some(item) = list.first() {
+        println!("the person age is {}", item.age);
+    }
 }
