@@ -1,11 +1,12 @@
-fn print1(u : impl std::fmt::Debug){
-    println!("{:?}",u);
-}
+struct Marker(i32); // unit struct
+struct tuple(u8, u8, u8); // struct like tuple
 
 fn main() {
-    let x = (0..10)
-        .map(|x|x * 10)
-        .filter(|x| x % 5 == 0)
-        .collect::<Vec<i32>>();
-    print1(x);
+    let _marker = Marker(10); // type with  one variant;
+    println!("Value: {}", _marker.0);
+
+    let info = ("Amitabh", 10, 10);
+    println!("Name: {}", info.0);
+    println!("Num1: {}", info.1);
+    println!("Num2: {}", info.2);
 }
