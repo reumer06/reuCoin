@@ -1,12 +1,14 @@
-struct Marker(i32); // unit struct
-struct tuple(u8, u8, u8); // struct like tuple
-
+union MyUnion {
+    p: u32,
+    q: f32,
+}
 fn main() {
-    let _marker = Marker(10); // type with  one variant;
-    println!("Value: {}", _marker.0);
-
-    let info = ("Amitabh", 10, 10);
-    println!("Name: {}", info.0);
-    println!("Num1: {}", info.1);
-    println!("Num2: {}", info.2);
+    let mut my_union = MyUnion { p: 10 };
+    my_union.p = 12334553; // writing to union is safe;
+    unsafe {
+        // reading from union is unsafe;
+        // type punning writing the data as one type and reading it with another; [very unsafe]
+        println!("p : {}", my_union.p);
+        println!("q : {}", my_union.q); // bunch of zeros.
+    }
 }
