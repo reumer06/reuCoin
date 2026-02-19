@@ -1,23 +1,13 @@
-fn hi() {
-    println!("hi");
-}
-
-fn add(i: i32, j: i32) -> i32 {
-    i + j
-}
-
-fn c_add(a: i32) -> impl Fn(i32) -> i32 {
-    move |b| a + b
-}
+// Closures
 
 fn main() {
-    let add_five = |x| add(5, x); // partial application { half filled arguments};
-    println!("partial application: {}", add_five(10));
-
-    let _result = c_add(5)(10); // currying {breaking the func into taking multiple args ;
-    let add_ten = c_add(10);
-    println!("currying: {}", add_ten(10));
-
-    let u = hi;
+    let x = 42;
+    let u = || println!("{x}");
     u();
+
+    let z = |x: i32| x * 2; // in most cases type cannot be inferred; specify them directly.
+    println!("{}", z(7));
+
+    let y = |(a, b): (i32, i32)| -> i32 { a + b }; // return type can also be specified.
+    y((10, 23));
 }
