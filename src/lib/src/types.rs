@@ -1,3 +1,5 @@
+use crate::U256;
+
 pub struct Blockchain {
     pub blocks: Vec<Block>,
 }
@@ -27,5 +29,37 @@ impl Block {
     }
 }
 
-pub struct BlockHeader;
+pub struct BlockHeader {
+    // timestamp of the block.
+    pub timestamp: u64,
+    // Nonce used to mine the block.
+    pub nonce: u64,
+    // hash of the previous block.
+    pub prev_block_hash: [u8; 32],
+    // merkle root of the block's transactions.
+    pub merkle_root: [u8; 32],
+    // target.
+    pub target: U256, // has to higher than hash of this block to be considered valid.
+}
+
+impl BlockHeader {
+    pub fn new(
+        timestamp: u64,
+        nonce: u64,
+        prev_block_hash: [u8; 32],
+        merkle_root: [u8; 32],
+        target: U256,
+    ) -> Self {
+        BlockHeader {
+            timestamp,
+            nonce,
+            prev_block_hash,
+            merkle_root,
+            target,
+        }
+    }
+    pub fn hash(&self) -> ! {
+        unimplemented!()
+    }
+}
 pub struct Transaction;
