@@ -76,3 +76,12 @@ pub struct TransactionOutput {
     pub unique_key: Uuid,
     pub pubkey: [u8; 33],
 }
+
+impl Transaction {
+    pub fn new(inputs: Vec<TransactionInput>, outputs: Vec<TransactionOutput>) -> Self {
+        Transaction { inputs, outputs }
+    }
+    pub fn hash(&self) -> ! {
+        unimplemented!()
+    }
+}
