@@ -33,7 +33,7 @@ impl Block {
 
 pub struct BlockHeader {
     // timestamp of the block.
-    pub timestamp: u64,
+    pub timestamp: DateTime<Utc>,
     // Nonce used to mine the block.
     pub nonce: u64,
     // hash of the previous block.
@@ -46,7 +46,7 @@ pub struct BlockHeader {
 
 impl BlockHeader {
     pub fn new(
-        timestamp: u64,
+        timestamp: DateTime<Utc>,
         nonce: u64,
         prev_block_hash: [u8; 32],
         merkle_root: [u8; 32],
