@@ -1,5 +1,11 @@
-use ecdsa::{Signature as EcdsaSignature, SigningKey, VerifyingKey, signature::Signer};
+use ecdsa::{
+    signature::Signer,
+    Signature as ECDSASignature,
+    VerifyingKey,
+    SigningKey
+};
+
 use k256::Secp256k1;
-pub struct Signature(EcdsaSignature<Secp256k1>);
+pub struct Signature(ECDSASignature<Secp256k1>);
 pub struct PublicKey(VerifyingKey<Secp256k1>);
 pub struct PrivateKey(SigningKey<Secp256k1>);
