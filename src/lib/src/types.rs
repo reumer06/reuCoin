@@ -1,7 +1,10 @@
 use crate::U256;
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use serde_big_array::BigArray;
 use uuid::Uuid;
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Blockchain {
     pub blocks: Vec<Block>,
 }
@@ -14,6 +17,8 @@ impl Blockchain {
         self.blocks.push(block);
     }
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Block {
     pub header: BlockHeader,
     pub transactions: Vec<Transaction>,
@@ -31,6 +36,7 @@ impl Block {
     }
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct BlockHeader {
     // timestamp of the block.
     pub timestamp: DateTime<Utc>,
@@ -64,17 +70,25 @@ impl BlockHeader {
         unimplemented!()
     }
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Transaction {
     pub inputs: Vec<TransactionInput>,
     pub outputs: Vec<TransactionOutput>,
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TransactionInput {
     pub prev_transaction_output_hash: [u8; 32],
+    #[serde(with = "BigArray")]
     pub signature: [u8; 64],
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TransactionOutput {
     pub value: u64,
     pub unique_key: Uuid,
+    #[serde(with = "BigArray")]
     pub pubkey: [u8; 33],
 }
 
