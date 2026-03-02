@@ -1,7 +1,7 @@
 use crate::U256;
+use crate::crypto::{PublicKey, Signature};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use serde_big_array::BigArray;
 use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -80,16 +80,14 @@ pub struct Transaction {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TransactionInput {
     pub prev_transaction_output_hash: [u8; 32],
-    #[serde(with = "BigArray")]
-    pub signature: [u8; 64],
+    pub signature: Signature,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TransactionOutput {
     pub value: u64,
     pub unique_key: Uuid,
-    #[serde(with = "BigArray")]
-    pub pubkey: [u8; 33],
+    pub pubkey: PublicKey,
 }
 
 impl Transaction {
