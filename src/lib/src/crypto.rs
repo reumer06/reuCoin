@@ -9,7 +9,7 @@ pub struct Signature(ECDSASignature<Secp256k1>);
 
 pub struct PublicKey(VerifyingKey<Secp256k1>);
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct PrivateKey(#[serde(with = "signkey_serde")] pub SigningKey<Secp256k1>);
+pub struct PrivateKey(#[serde(with = "signkey_serde")] pub SigningKey<Secp256k1>); //  use serialize and deserialize from this mod.
 mod signkey_serde {
     use serde::Deserialize;
 
@@ -20,7 +20,7 @@ mod signkey_serde {
     where
         S: serde::Serializer,
     {
-        serializer.serialize_bytes(&key.to_bytes())
+        serializer.serialize_bytes(&key.to_bytes()) // convert the key into a slice of bytes then serialize it.
     }
 
     pub fn deserialize<'de, D>(
@@ -29,8 +29,8 @@ mod signkey_serde {
     where
         D: serde::Deserializer<'de>,
     {
+        // use a byte slice or array instead of Vec for better performance
         let bytes: Vec<u8> = Vec::<u8>::deserialize(deserializer)?;
-        // Note: Consider replacing .unwrap() with proper error mapping for production
         Ok(super::SigningKey::from_slice(&bytes).unwrap())
     }
 }
