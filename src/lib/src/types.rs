@@ -33,8 +33,8 @@ impl Block {
             transactions,
         }
     }
-    pub fn hash(&self) -> ! {
-        unimplemented!() // never type.
+    pub fn hash(&self) -> Hash {
+        Hash::hash(self)
     }
 }
 
