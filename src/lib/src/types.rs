@@ -1,5 +1,7 @@
 use crate::U256;
 use crate::crypto::{PublicKey, Signature};
+use crate::sha256::Hash;
+use crate::util::MerkleRoot;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -43,9 +45,9 @@ pub struct BlockHeader {
     // Nonce used to mine the block.
     pub nonce: u64,
     // hash of the previous block.
-    pub prev_block_hash: [u8; 32],
+    pub prev_block_hash: Hash,
     // merkle root of the block's transactions.
-    pub merkle_root: [u8; 32],
+    pub merkle_root: MerkleRoot,
     // target.
     pub target: U256, // has to higher than hash of this block to be considered valid.
 }
@@ -54,8 +56,8 @@ impl BlockHeader {
     pub fn new(
         timestamp: DateTime<Utc>,
         nonce: u64,
-        prev_block_hash: [u8; 32],
-        merkle_root: [u8; 32],
+        prev_block_hash: Hash,
+        merkle_root: MerkleRoot,
         target: U256,
     ) -> Self {
         BlockHeader {
@@ -79,7 +81,7 @@ pub struct Transaction {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TransactionInput {
-    pub prev_transaction_output_hash: [u8; 32],
+    pub prev_transaction_output_hash: Hash,
     pub signature: Signature,
 }
 
