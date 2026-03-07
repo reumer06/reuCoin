@@ -6,7 +6,13 @@
 fn main() {
     let somevalue = Some("safe to unwarp");
     let nonevalue: Option<&str> = None;
-    println!("somevalue: {}", somevalue.unwrap_or("this will not panic"));
+    println!(
+        "somevalue: {}",
+        somevalue.unwrap_or_else(|| "this will not panic")
+    );
 
-    println!("nonevalue: {}", nonevalue.unwrap_or("might panic"));
+    println!(
+        "nonevalue: {}",
+        nonevalue.unwrap_or_else(|| { "might panic" })
+    );
 }
