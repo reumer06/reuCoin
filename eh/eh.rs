@@ -4,8 +4,9 @@ pub enum Option<T> {
 }
 
 fn main() {
-    let value1 = Some("safe to unwarp");
-    let none_value: Option<&str> = None;
-    println!("value1: {}", value1.unwrap());
-    println!("none value : {}", none_value.unwarp()); // crash
+    let somevalue = Some("safe to unwarp");
+    let nonevalue: Option<&str> = None;
+    println!("somevalue: {}", somevalue.expect("this will not panic"));
+
+    println!("nonevalue: {}", nonevalue.expect("this will panic bad"));
 }
