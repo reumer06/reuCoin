@@ -1,12 +1,12 @@
-pub enum Option<T> {
-    Some(T),
-    None,
-}
+// pub enum Option<T> {     // already defined;
+//     Some(T),
+//     None,
+// }
 
 fn main() {
     let somevalue = Some("safe to unwarp");
     let nonevalue: Option<&str> = None;
-    println!("somevalue: {}", somevalue.expect("this will not panic"));
+    println!("somevalue: {}", somevalue.unwrap_or("this will not panic"));
 
-    println!("nonevalue: {}", nonevalue.expect("this will panic bad"));
+    println!("nonevalue: {}", nonevalue.unwrap_or("might panic"));
 }
