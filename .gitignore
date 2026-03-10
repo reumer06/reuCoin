@@ -4,3 +4,5 @@
 /.idea
 Cargo.toml
 Cargo.lock
+/eh/eh.exe
+/eh/eh.pdb
