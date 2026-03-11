@@ -1,5 +1,6 @@
 use crate::U256;
 use crate::crypto::{PublicKey, Signature};
+use crate::error::{Result, ReuError};
 use crate::sha256::Hash;
 use crate::util::MerkleRoot;
 use chrono::{DateTime, Utc};
