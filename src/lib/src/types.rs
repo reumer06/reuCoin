@@ -16,8 +16,13 @@ impl Blockchain {
     pub fn new() -> Self {
         Blockchain { blocks: vec![] }
     }
-    pub fn add_blocks(&mut self, block: Block) {
-        self.blocks.push(block);
+    pub fn add_blocks(&mut self, block: Block) -> Result<()> {
+        if self.blocks.is_empty() {
+            if block.header.prev_block_hash != Hash::zero() {
+                println!("zero hash");
+                return Err(ReuError::InvalidBlock);
+            }
+        }
     }
 }
 
