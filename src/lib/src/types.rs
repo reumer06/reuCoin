@@ -84,6 +84,13 @@ impl Block {
     pub fn hash(&self) -> Hash {
         Hash::hash(self)
     }
+    pub fn verify_signature(&self, utxos: &HashMap<Hash, TransactionOutput>) -> Result<()> {
+        let mut inputs: HashMap<Hash, TransactionOutput> = HashMap::new();
+        // reject complete empty blocks
+        if self.transactions.is_empty() {
+            return Err(ReuError::InvalidTransaction);
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
