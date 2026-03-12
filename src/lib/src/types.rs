@@ -10,12 +10,16 @@ use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Blockchain {
+    pub utxos: HashMap<Hash, TransactionOutput>,
     pub blocks: Vec<Block>,
 }
 
 impl Blockchain {
     pub fn new() -> Self {
-        Blockchain { blocks: vec![] }
+        Blockchain {
+            utxos: HashMap::new(),
+            blocks: vec![],
+        }
     }
     pub fn add_blocks(&mut self, block: Block) -> Result<()> {
         if self.blocks.is_empty() {
@@ -47,6 +51,19 @@ impl Blockchain {
             }
             self.blocks.push(block);
             Ok(())
+        }
+    }
+
+    pub fn rebuild_utxos(&mut self) {
+        for blocks in &self.blocks {
+            for transaction in &blocks.transactions {
+                for input in &transaction.inputs {
+                    self.utxos.remove(&input.prev_transaction_output_hash);
+                    for output in transaction.outputs.iter() {
+                        self.utxos.insert(transaction.hash(), output.clone());
+                    }
+                }
+            }
         }
     }
 }
