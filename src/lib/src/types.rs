@@ -21,7 +21,28 @@ impl Blockchain {
             if block.header.prev_block_hash != Hash::zero() {
                 println!("zero hash");
                 return Err(ReuError::InvalidBlock);
+            } else {
+                let last_block = self.blocks.last().unwrap();
+                if block.header.prev_block_hash != last_block.hash() {
+                    println!("prev hash is wrong");
+                    return Err(ReuError::InvalidBlock);
+                }
+                if !block.header.hash().matches_target(block.header.target) {
+                    println!("does not match the target");
+                    return Err(ReuError::InvalidBlock);
+                }
+                let calculated_merkle_root = MerkleRoot::calculate(&block.transactions);
+                if calculated_merkle_root != block.header.merkle_root {
+                    println!("invalid merkle root");
+                    return Err(ReuError::InvalidMerkleRoot);
+                }
+                if block.header.timestamp <= last_block.header.timestamp {
+                    return Err(ReuError::InvalidBlock);
+                }
+                block.verify_transactions(self.blocks_heights(), &self.utxos)?;
             }
+            self.blocks.push(block);
+            Ok(())
         }
     }
 }
