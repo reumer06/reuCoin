@@ -27,6 +27,7 @@ impl Blockchain {
                     println!("prev hash is wrong");
                     return Err(ReuError::InvalidBlock);
                 }
+                // check if the block's hash is less than target
                 if !block.header.hash().matches_target(block.header.target) {
                     println!("does not match the target");
                     return Err(ReuError::InvalidBlock);
@@ -36,6 +37,7 @@ impl Blockchain {
                     println!("invalid merkle root");
                     return Err(ReuError::InvalidMerkleRoot);
                 }
+                // check if the block timestamp is after the last block's timestamp
                 if block.header.timestamp <= last_block.header.timestamp {
                     return Err(ReuError::InvalidBlock);
                 }
