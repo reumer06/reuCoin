@@ -1,22 +1,70 @@
 use crate::U256;
 use crate::crypto::{PublicKey, Signature};
+use crate::error::{Result, ReuError};
 use crate::sha256::Hash;
 use crate::util::MerkleRoot;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Blockchain {
+    pub utxos: HashMap<Hash, TransactionOutput>,
     pub blocks: Vec<Block>,
 }
 
 impl Blockchain {
     pub fn new() -> Self {
-        Blockchain { blocks: vec![] }
+        Blockchain {
+            utxos: HashMap::new(),
+            blocks: vec![],
+        }
     }
-    pub fn add_blocks(&mut self, block: Block) {
-        self.blocks.push(block);
+    pub fn add_blocks(&mut self, block: Block) -> Result<()> {
+        if self.blocks.is_empty() {
+            if block.header.prev_block_hash != Hash::zero() {
+                println!("zero hash");
+                return Err(ReuError::InvalidBlock);
+            } else {
+                let last_block = self.blocks.last().unwrap();
+                if block.header.prev_block_hash != last_block.hash() {
+                    println!("prev hash is wrong");
+                    return Err(ReuError::InvalidBlock);
+                }
+                // check if the block's hash is less than target
+                if !block.header.hash().matches_target(block.header.target) {
+                    println!("does not match the target");
+                    return Err(ReuError::InvalidBlock);
+                }
+                let calculated_merkle_root = MerkleRoot::calculate(&block.transactions);
+                if calculated_merkle_root != block.header.merkle_root {
+                    println!("invalid merkle root");
+                    return Err(ReuError::InvalidMerkleRoot);
+                }
+                // check if the block timestamp is after the last block's timestamp
+                if block.header.timestamp <= last_block.header.timestamp {
+                    return Err(ReuError::InvalidBlock);
+                }
+                // verify all transactions in the block
+                block.verify_transactions(self.blocks_heights(), &self.utxos)?;
+            }
+            self.blocks.push(block);
+            Ok(())
+        }
+    }
+
+    pub fn rebuild_utxos(&mut self) {
+        for blocks in &self.blocks {
+            for transaction in &blocks.transactions {
+                for input in &transaction.inputs {
+                    self.utxos.remove(&input.prev_transaction_output_hash);
+                    for output in transaction.outputs.iter() {
+                        self.utxos.insert(transaction.hash(), output.clone());
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -35,6 +83,13 @@ impl Block {
     }
     pub fn hash(&self) -> Hash {
         Hash::hash(self)
+    }
+    pub fn verify_signature(&self, utxos: &HashMap<Hash, TransactionOutput>) -> Result<()> {
+        let mut inputs: HashMap<Hash, TransactionOutput> = HashMap::new();
+        // reject complete empty blocks
+        if self.transactions.is_empty() {
+            return Err(ReuError::InvalidTransaction);
+        }
     }
 }
 

@@ -2,7 +2,7 @@ use crate::U256;
 use serde::{Deserialize, Serialize};
 use sha256::digest;
 use std::fmt;
-#[derive(Clone, Copy, Serialize, Deserialize, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Serialize, Deserialize, Debug, PartialEq, Eq, Hash)]
 
 pub struct Hash(U256);
 
@@ -29,6 +29,12 @@ impl Hash {
     // zero hash;
     pub fn zero() -> Self {
         Hash(U256::zero())
+    }
+
+    pub fn as_bytes(&self) -> [u8; 32] {
+        let mut bytes: Vec<u8> = vec![0; 32];
+        self.0.to_little_endian(&mut bytes);
+        bytes.as_slice().try_into().unwrap()
     }
 }
 

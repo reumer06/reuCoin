@@ -1,5 +1,8 @@
 use ecdsa::{Signature as ECDSASignature, SigningKey, VerifyingKey};
 
+use crate::sha256::Hash;
+use ecdsa::signature::Signer;
+use ecdsa::signature::Verifier;
 use k256::Secp256k1;
 use serde::{Deserialize, Serialize};
 
@@ -32,5 +35,20 @@ mod signkey_serde {
         // use a byte slice or array instead of Vec for better performance
         let bytes: Vec<u8> = Vec::<u8>::deserialize(deserializer)?;
         Ok(super::SigningKey::from_slice(&bytes).unwrap())
+    }
+}
+
+impl Signature {
+    pub fn sign_output(output_hash: &Hash, private_key: &PrivateKey) -> Self {
+        let signing_key = &private_key.0;
+        let signature = signing_key.sign(&output_hash.as_bytes());
+        Signature(signature)
+    }
+
+    pub fn verify(&self, output_hash: &Hash, public_key: &PublicKey) -> bool {
+        public_key
+            .0
+            .verify(&output_hash.as_bytes(), &self.0)
+            .is_ok()
     }
 }
