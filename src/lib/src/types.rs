@@ -5,6 +5,7 @@ use crate::sha256::Hash;
 use crate::util::MerkleRoot;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -41,6 +42,7 @@ impl Blockchain {
                 if block.header.timestamp <= last_block.header.timestamp {
                     return Err(ReuError::InvalidBlock);
                 }
+                // verify all transactions in the block
                 block.verify_transactions(self.blocks_heights(), &self.utxos)?;
             }
             self.blocks.push(block);
