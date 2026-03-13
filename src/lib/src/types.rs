@@ -84,13 +84,20 @@ impl Block {
     pub fn hash(&self) -> Hash {
         Hash::hash(self)
     }
-    pub fn verify_signature(&self, utxos: &HashMap<Hash, TransactionOutput>) -> Result<()> {
+    pub fn verify_signature(
+        &self,
+        predicted_block_height: u64,
+        utxos: &HashMap<Hash, TransactionOutput>,
+    ) -> Result<()> {
         let mut inputs: HashMap<Hash, TransactionOutput> = HashMap::new();
         // reject complete empty blocks
         if self.transactions.is_empty() {
             return Err(ReuError::InvalidTransaction);
         }
-        for transaction in &self.transactions {
+        //  verify coinbase transaction -> the first transaction in a block is called as coinbase transaction
+        self.verify_coinbase_transaction(predicted_block_height, utxos)?;
+
+        for transaction in self.transactions.iter().skip(1) {
             let mut input_value = 0;
             let mut output_value = 0;
             for input in &transaction.inputs {
@@ -122,6 +129,13 @@ impl Block {
             }
         }
         Ok(())
+    }
+
+    pub fn verify_coinbase_transaction(
+        &self,
+        predicted_block_height: u64,
+        utxos: &HashMap<Hash, TransactionOutput>,
+    ) -> Result<()> {
     }
 }
 
