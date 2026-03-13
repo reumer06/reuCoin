@@ -156,6 +156,8 @@ impl Block {
         }
         Ok(())
     }
+
+    pub fn calculate_miner_fess(&self, utxos: &HashMap<Hash, TransactionOutput>) -> Result<u64> {}
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
