@@ -136,6 +136,25 @@ impl Block {
         predicted_block_height: u64,
         utxos: &HashMap<Hash, TransactionOutput>,
     ) -> Result<()> {
+        let coinbase_tran = &self.transactions[0];
+        if coinbase_tran.inputs.len() != 0 {
+            return Err(ReuError::InvalidTransaction);
+        }
+        if coinbase_tran.outputs.len() == 0 {
+            return Err(ReuError::InvalidTransaction);
+        }
+        let miner_fess = self.calculate_miner_fess(utxos)?;
+        let block_reward = crate::INITIAL_REWARD * 10u64.pow(8)
+            / 2u64.pow((predicted_block_height / crate::HALVING_INTERVAL) as u32);
+        let total_coinbase_outputs: u64 = coinbase_tran
+            .outputs
+            .iter()
+            .map(|output| output.value)
+            .sum();
+        if total_coinbase_outputs != block_reward + miner_fess {
+            return Err(ReuError::InvalidTransaction);
+        }
+        Ok(())
     }
 }
 
