@@ -54,16 +54,21 @@ impl Blockchain {
         block.verify_transactions(self.blocks.len() as u64, &self.utxos)?;
 
         self.blocks.push(block);
+        self.rebuild_utxos(); // keep state synced
         Ok(())
     }
     pub fn rebuild_utxos(&mut self) {
+        self.utxos.clear(); // chain state and utxos stays in sync
+
         for blocks in &self.blocks {
             for transaction in &blocks.transactions {
+                // spend referenced outputs
                 for input in &transaction.inputs {
                     self.utxos.remove(&input.prev_transaction_output_hash);
-                    for output in transaction.outputs.iter() {
-                        self.utxos.insert(transaction.hash(), output.clone());
-                    }
+                }
+                // add newly in created outputs
+                for output in &transaction.outputs {
+                    self.utxos.insert(output.hash(), output.clone());
                 }
             }
         }
@@ -184,6 +189,11 @@ impl Block {
         }
         let input_value: u64 = inputs.values().map(|output| output.value).sum();
         let outputs_value: u64 = outputs.values().map(|output| output.value).sum();
+
+        if input_value < outputs_value {
+            return Err(ReuError::InvalidTransaction);
+        }
+
         Ok(input_value - outputs_value)
     }
 }
