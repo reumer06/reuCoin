@@ -90,6 +90,38 @@ impl Block {
         if self.transactions.is_empty() {
             return Err(ReuError::InvalidTransaction);
         }
+        for transaction in &self.transactions {
+            let mut input_value = 0;
+            let mut output_value = 0;
+            for input in &transaction.inputs {
+                let prev_output = utxos.get(&input.prev_transaction_output_hash);
+                if prev_output.is_none() {
+                    return Err(ReuError::InvalidTransaction);
+                }
+                let prev_output = prev_output.unwrap();
+                // prev same block double spending
+                if inputs.contains_key(&input.prev_transaction_output_hash) {
+                    return Err(ReuError::InvalidTransaction);
+                }
+                // check if signature is valid
+                if !input
+                    .signature
+                    .verify(&input.prev_transaction_output_hash, &prev_output.pubkey)
+                {
+                    return Err(ReuError::InvalidSignature);
+                }
+                input_value += prev_output.value;
+                inputs.insert(input.prev_transaction_output_hash, prev_output.clone());
+            }
+            for output in &transaction.outputs {
+                output_value += output.value;
+            }
+            // difference is the fee for miner
+            if input_value < output_value {
+                return Err(ReuError::InvalidTransaction);
+            }
+        }
+        Ok(())
     }
 }
 
