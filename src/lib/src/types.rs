@@ -26,34 +26,36 @@ impl Blockchain {
             if block.header.prev_block_hash != Hash::zero() {
                 println!("zero hash");
                 return Err(ReuError::InvalidBlock);
-            } else {
-                let last_block = self.blocks.last().unwrap();
-                if block.header.prev_block_hash != last_block.hash() {
-                    println!("prev hash is wrong");
-                    return Err(ReuError::InvalidBlock);
-                }
-                // check if the block's hash is less than target
-                if !block.header.hash().matches_target(block.header.target) {
-                    println!("does not match the target");
-                    return Err(ReuError::InvalidBlock);
-                }
-                let calculated_merkle_root = MerkleRoot::calculate(&block.transactions);
-                if calculated_merkle_root != block.header.merkle_root {
-                    println!("invalid merkle root");
-                    return Err(ReuError::InvalidMerkleRoot);
-                }
-                // check if the block timestamp is after the last block's timestamp
-                if block.header.timestamp <= last_block.header.timestamp {
-                    return Err(ReuError::InvalidBlock);
-                }
-                // verify all transactions in the block
-                block.verify_transactions(self.blocks_heights(), &self.utxos)?;
             }
-            self.blocks.push(block);
-            Ok(())
+        } else {
+            let last_block = self.blocks.last().unwrap();
+            if block.header.prev_block_hash != last_block.hash() {
+                println!("prev hash is wrong");
+                return Err(ReuError::InvalidBlock);
+            }
+            // check if the block timestamp is after the last block's timestamp
+            if block.header.timestamp <= last_block.header.timestamp {
+                return Err(ReuError::InvalidBlock);
+            }
         }
-    }
 
+        // check if the block's hash is less than target
+        if !block.header.hash().matches_target(block.header.target) {
+            println!("does not match the target");
+            return Err(ReuError::InvalidBlock);
+        }
+        let calculated_merkle_root = MerkleRoot::calculate(&block.transactions);
+        if calculated_merkle_root != block.header.merkle_root {
+            println!("invalid merkle root");
+            return Err(ReuError::InvalidMerkleRoot);
+        }
+
+        // verify all transactions in the block at the next height
+        block.verify_transactions(self.blocks.len() as u64, &self.utxos)?;
+
+        self.blocks.push(block);
+        Ok(())
+    }
     pub fn rebuild_utxos(&mut self) {
         for blocks in &self.blocks {
             for transaction in &blocks.transactions {
@@ -170,13 +172,14 @@ impl Block {
                 if inputs.contains_key(&input.prev_transaction_output_hash) {
                     return Err(ReuError::InvalidTransaction);
                 }
-                inputs.insert(input.prev_transaction_output_hash, prev_outputs.clone());
+                inputs.insert(input.prev_transaction_output_hash, prev_output.clone());
             }
             for output in &transactions.outputs {
-                if outputs.contains_key(&outputs.hash()) {
+                let output_hash = output.hash();
+                if outputs.contains_key(&output_hash) {
                     return Err(ReuError::InvalidTransaction);
                 }
-                outputs.insert(outputs.hash(), outputs.clone());
+                outputs.insert(output_hash, output.clone());
             }
         }
         let input_value: u64 = inputs.values().map(|output| output.value).sum();
