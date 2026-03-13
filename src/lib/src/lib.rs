@@ -6,6 +6,22 @@ construct_uint! {
     // construct an unsigned 256-bit integer
     pub struct U256(4);
 }
+
+// initial reward - multiply by 10^8t to get satoshis
+pub const INITIAL_REWARD: u64 = 50;
+// halving interval in block
+pub const HALVING_INTERVAL: u64 = 210;
+
+//ideal block time in seconds
+pub const IDEAL_BLOCK_TIME: u64 = 10;
+
+pub const MIN_TARGET: U256 = U256([
+    0xFFFF_FFFF_FFFF_FFFF,
+    0xFFFF_FFFF_FFFF_FFFF,
+    0xFFFF_FFFF_FFFF_FFFF,
+    0x0000_FFFF_FFFF_FFFF,
+]);
+pub const DIFFICULTY_UPDATE_INTERVAL: u64 = 50;
 pub mod crypto;
 pub mod error;
 pub mod sha256;
