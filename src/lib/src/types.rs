@@ -41,6 +41,12 @@ impl Blockchain {
             }
         }
 
+        let block_transactions: HashSet<_> =
+            block.transactions.iter().map(|tx| tx.hash()).collect();
+
+        self.mempool
+            .retain(|_, tx| !block_transactions.contains(&tx.hash()));
+
         // check if the block's hash is less than target
         if !block.header.hash().matches_target(block.header.target) {
             println!("does not match the target");
