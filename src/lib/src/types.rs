@@ -62,9 +62,13 @@ impl Blockchain {
         block.verify_transactions(self.blocks.len() as u64, &self.utxos)?;
 
         self.blocks.push(block);
+        self.try_adjust_target();
         self.rebuild_utxos(); // keep state synced
         Ok(())
     }
+
+    // try to adjust the target of the blockchain
+    pub fn try_adjust_target(&mut self) {}
     pub fn rebuild_utxos(&mut self) {
         self.utxos.clear(); // chain state and utxos stays in sync
 
