@@ -75,6 +75,7 @@ impl Blockchain {
         if self.blocks.len() % crate::DIFFICULTY_UPDATE_INTERVAL as usize != 0 {
             return;
         }
+        // measure the time it took to mine the last block
         let start_time = self.blocks
             [self.blocks.len() - crate::DIFFICULTY_UPDATE_INTERVAL as usize]
             .header
@@ -86,6 +87,7 @@ impl Blockchain {
         // calculate the ideal number of seconds
         let target_seconds = crate::IDEAL_BLOCK_TIME * crate::DIFFICULTY_UPDATE_INTERVAL;
         let new_target = self.target * (time_diff_seconds as f64 / target_seconds as f64) as usize;
+        // clamp the new target to be within the range
         let new_target = if new_target < self.target / 4 {
             self.target / 4
         } else if new_target > self.target * 4 {
@@ -93,6 +95,7 @@ impl Blockchain {
         } else {
             new_target
         };
+        // if the target is more than the minimum target set it to minimum target
         self.target = new_target.min(crate::MIN_TARGET);
     }
     pub fn rebuild_utxos(&mut self) {
