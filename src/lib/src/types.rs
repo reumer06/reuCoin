@@ -86,8 +86,9 @@ impl Blockchain {
         let time_diff_seconds = time_diff.num_seconds();
         // calculate the ideal number of seconds
         let target_seconds = crate::IDEAL_BLOCK_TIME * crate::DIFFICULTY_UPDATE_INTERVAL;
+        // difficulty retargeting
         let new_target = self.target * (time_diff_seconds as f64 / target_seconds as f64) as usize;
-        // clamp the new target to be within the range
+        // clamp the new target to be within the range (factor of 4 clamp)
         let new_target = if new_target < self.target / 4 {
             self.target / 4
         } else if new_target > self.target * 4 {
