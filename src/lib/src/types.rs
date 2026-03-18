@@ -68,7 +68,33 @@ impl Blockchain {
     }
 
     // try to adjust the target of the blockchain
-    pub fn try_adjust_target(&mut self) {}
+    pub fn try_adjust_target(&mut self) {
+        if self.blocks.is_empty() {
+            return;
+        }
+        if self.blocks.len() % crate::DIFFICULTY_UPDATE_INTERVAL as usize != 0 {
+            return;
+        }
+        let start_time = self.blocks
+            [self.blocks.len() - crate::DIFFICULTY_UPDATE_INTERVAL as usize]
+            .header
+            .timestamp;
+        let end_time = self.blocks.last().unwrap().header.timestamp;
+        let time_diff = end_time - start_time;
+        // comver time_diff to seconds
+        let time_diff_seconds = time_diff.num_seconds();
+        // calculate the ideal number of seconds
+        let target_seconds = crate::IDEAL_BLOCK_TIME * crate::DIFFICULTY_UPDATE_INTERVAL;
+        let new_target = self.target * (time_diff_seconds as f64 / target_seconds as f64) as usize;
+        let new_target = if new_target < self.target / 4 {
+            self.target / 4
+        } else if new_target > self.target * 4 {
+            self.target * 4
+        } else {
+            new_target
+        };
+        self.target = new_target.min(crate::MIN_TARGET);
+    }
     pub fn rebuild_utxos(&mut self) {
         self.utxos.clear(); // chain state and utxos stays in sync
 
