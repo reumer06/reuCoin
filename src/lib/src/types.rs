@@ -3,6 +3,7 @@ use crate::crypto::{PublicKey, Signature};
 use crate::error::{Result, ReuError};
 use crate::sha256::Hash;
 use crate::util::MerkleRoot;
+use bigdecimal::BigDecimal;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
