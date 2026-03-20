@@ -87,11 +87,11 @@ impl Blockchain {
         let time_diff_seconds = time_diff.num_seconds();
         // calculate the ideal number of seconds
         let target_seconds = crate::IDEAL_BLOCK_TIME * crate::DIFFICULTY_UPDATE_INTERVAL;
-
+        // multiply the current target by actual time divided by ideal time
         let new_target = BigDecimal::parse_bytes(&self.target.to_string().as_bytes(), 10)
             .expect("BUG: impossible")
             * (BigDecimal::from(time_diff_seconds) / BigDecimal::from(target_seconds));
-
+        // cut off decimal point and everything after it from the string representation of new_target
         let new_target_str = new_target
             .to_string()
             .split('.')
