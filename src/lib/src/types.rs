@@ -87,8 +87,18 @@ impl Blockchain {
         let time_diff_seconds = time_diff.num_seconds();
         // calculate the ideal number of seconds
         let target_seconds = crate::IDEAL_BLOCK_TIME * crate::DIFFICULTY_UPDATE_INTERVAL;
-        // difficulty retargeting
-        let new_target = self.target * (time_diff_seconds as f64 / target_seconds as f64) as usize;
+
+        let new_target = BigDecimal::parse_bytes(&self.target.to_string().as_bytes(), 10)
+            .expect("BUG: impossible")
+            * (BigDecimal::from(time_diff_seconds) / BigDecimal::from(target_seconds));
+
+        let new_target_str = new_target
+            .to_string()
+            .split('.')
+            .next()
+            .expect("BUG: Expected a Decimal point")
+            .to_owned();
+        let new_target: U256 = U256::from_str_radix(&new_target_str, 10).expect("BUG: impossible");
         // clamp the new target to be within the range (factor of 4 clamp)
         let new_target = if new_target < self.target / 4 {
             self.target / 4
