@@ -287,6 +287,8 @@ impl BlockHeader {
     pub fn hash(&self) -> Hash {
         Hash::hash(self)
     }
+
+    pub fn mine(&mut self, steps: usize) -> bool {}
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
