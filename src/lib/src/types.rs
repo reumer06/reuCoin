@@ -3,14 +3,18 @@ use crate::crypto::{PublicKey, Signature};
 use crate::error::{Result, ReuError};
 use crate::sha256::Hash;
 use crate::util::MerkleRoot;
+use bigdecimal::BigDecimal;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Blockchain {
     pub utxos: HashMap<Hash, TransactionOutput>,
+    #[serde(default)]
+    pub mempool: HashMap<Hash, Transaction>,
+    pub target: U256,
     pub blocks: Vec<Block>,
 }
 
@@ -18,7 +22,9 @@ impl Blockchain {
     pub fn new() -> Self {
         Blockchain {
             utxos: HashMap::new(),
+            mempool: HashMap::new(),
             blocks: vec![],
+            target: crate::MIN_TARGET,
         }
     }
     pub fn add_blocks(&mut self, block: Block) -> Result<()> {
@@ -39,6 +45,12 @@ impl Blockchain {
             }
         }
 
+        let block_transactions: HashSet<_> =
+            block.transactions.iter().map(|tx| tx.hash()).collect();
+
+        self.mempool
+            .retain(|_, tx| !block_transactions.contains(&tx.hash()));
+
         // check if the block's hash is less than target
         if !block.header.hash().matches_target(block.header.target) {
             println!("does not match the target");
@@ -54,8 +66,52 @@ impl Blockchain {
         block.verify_transactions(self.blocks.len() as u64, &self.utxos)?;
 
         self.blocks.push(block);
+        self.try_adjust_target();
         self.rebuild_utxos(); // keep state synced
         Ok(())
+    }
+
+    // try to adjust the target of the blockchain
+    pub fn try_adjust_target(&mut self) {
+        if self.blocks.is_empty() {
+            return;
+        }
+        if self.blocks.len() % crate::DIFFICULTY_UPDATE_INTERVAL as usize != 0 {
+            return;
+        }
+        // measure the time it took to mine the last block
+        let start_time = self.blocks
+            [self.blocks.len() - crate::DIFFICULTY_UPDATE_INTERVAL as usize]
+            .header
+            .timestamp;
+        let end_time = self.blocks.last().unwrap().header.timestamp;
+        let time_diff = end_time - start_time;
+        // comver time_diff to seconds
+        let time_diff_seconds = time_diff.num_seconds();
+        // calculate the ideal number of seconds
+        let target_seconds = crate::IDEAL_BLOCK_TIME * crate::DIFFICULTY_UPDATE_INTERVAL;
+        // multiply the current target by actual time divided by ideal time
+        let new_target = BigDecimal::parse_bytes(&self.target.to_string().as_bytes(), 10)
+            .expect("BUG: impossible")
+            * (BigDecimal::from(time_diff_seconds) / BigDecimal::from(target_seconds));
+        // cut off decimal point and everything after it from the string representation of new_target
+        let new_target_str = new_target
+            .to_string()
+            .split('.')
+            .next()
+            .expect("BUG: Expected a Decimal point")
+            .to_owned();
+        let new_target: U256 = U256::from_str_radix(&new_target_str, 10).expect("BUG: impossible");
+        // clamp the new target to be within the range (factor of 4 clamp)
+        let new_target = if new_target < self.target / 4 {
+            self.target / 4
+        } else if new_target > self.target * 4 {
+            self.target * 4
+        } else {
+            new_target
+        };
+        // if the target is more than the minimum target set it to minimum target
+        self.target = new_target.min(crate::MIN_TARGET);
     }
     pub fn rebuild_utxos(&mut self) {
         self.utxos.clear(); // chain state and utxos stays in sync
