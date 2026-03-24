@@ -11,11 +11,11 @@ use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Blockchain {
-    pub utxos: HashMap<Hash, TransactionOutput>,
+    utxos: HashMap<Hash, TransactionOutput>,
     #[serde(default)]
-    pub mempool: HashMap<Hash, Transaction>,
-    pub target: U256,
-    pub blocks: Vec<Block>,
+    mempool: HashMap<Hash, Transaction>,
+    target: U256,
+    blocks: Vec<Block>,
 }
 
 impl Blockchain {
@@ -27,6 +27,22 @@ impl Blockchain {
             target: crate::MIN_TARGET,
         }
     }
+    pub fn utxos(&self) -> &HashMap<Hash, TransactionOutput> {
+        &self.utxos
+    }
+
+    pub fn target(&self) -> U256 {
+        self.target
+    }
+
+    pub fn blocks(&self) -> impl Iterator<Item = &Block> {
+        self.blocks.iter()
+    }
+
+    pub fn block_height(&self) -> u64 {
+        self.blocks.len() as u64
+    }
+
     pub fn add_blocks(&mut self, block: Block) -> Result<()> {
         if self.blocks.is_empty() {
             if block.header.prev_block_hash != Hash::zero() {
