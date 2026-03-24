@@ -12,8 +12,8 @@ use uuid::Uuid;
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Blockchain {
     utxos: HashMap<Hash, TransactionOutput>,
-    #[serde(default)]
-    mempool: HashMap<Hash, Transaction>,
+    #[serde(default, skip_serializing)]
+    mempool: Vec<Transaction>,
     target: U256,
     blocks: Vec<Block>,
 }
@@ -22,7 +22,7 @@ impl Blockchain {
     pub fn new() -> Self {
         Blockchain {
             utxos: HashMap::new(),
-            mempool: HashMap::new(),
+            mempool: vec![],
             blocks: vec![],
             target: crate::MIN_TARGET,
         }
