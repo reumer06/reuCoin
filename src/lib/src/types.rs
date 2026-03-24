@@ -43,6 +43,10 @@ impl Blockchain {
         self.blocks.len() as u64
     }
 
+    pub fn mempool(&self) -> &[Transaction] {
+        &self.mempool
+    }
+
     pub fn add_blocks(&mut self, block: Block) -> Result<()> {
         if self.blocks.is_empty() {
             if block.header.prev_block_hash != Hash::zero() {
@@ -65,7 +69,7 @@ impl Blockchain {
             block.transactions.iter().map(|tx| tx.hash()).collect();
 
         self.mempool
-            .retain(|_, tx| !block_transactions.contains(&tx.hash()));
+            .retain(|(_, tx)| !block_transactions.contains(&tx.hash()));
 
         // check if the block's hash is less than target
         if !block.header.hash().matches_target(block.header.target) {
