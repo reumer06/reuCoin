@@ -47,7 +47,27 @@ impl Blockchain {
         &self.mempool
     }
 
-    pub fn add_to_mempool(&mut self, transaction: Transaction) {}
+    // add a transaction to mempool
+    pub fn add_to_mempool(&mut self, transaction: Transaction) {
+        self.mempool.push(transaction);
+
+        // sort by miner fee
+        self.mempool.sort_by_key(|transaction| {
+            let all_inputs = transaction
+                .inputs
+                .iter()
+                .map(|input| {
+                    self.utxos
+                        .get(&input.prev_transaction_output_hash)
+                        .expect("BUG: Impossible")
+                        .value
+                })
+                .sum::<u64>();
+            let all_outputs: u64 = transaction.outputs.iter().map(|output| output.value).sum();
+            let miner_fee = all_inputs - all_outputs;
+            miner_fee
+        });
+    }
 
     pub fn add_blocks(&mut self, block: Block) -> Result<()> {
         if self.blocks.is_empty() {
