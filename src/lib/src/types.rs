@@ -47,6 +47,8 @@ impl Blockchain {
         &self.mempool
     }
 
+    pub fn add_to_mempool(&mut self, transaction: Transaction) {}
+
     pub fn add_blocks(&mut self, block: Block) -> Result<()> {
         if self.blocks.is_empty() {
             if block.header.prev_block_hash != Hash::zero() {
