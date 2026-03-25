@@ -53,6 +53,7 @@ impl Blockchain {
 
         // sort by miner fee
         self.mempool.sort_by_key(|transaction| {
+            // sum total value available from previous outputs
             let all_inputs = transaction
                 .inputs
                 .iter()
@@ -63,7 +64,9 @@ impl Blockchain {
                         .value
                 })
                 .sum::<u64>();
+            // sum value sent to new recipients
             let all_outputs: u64 = transaction.outputs.iter().map(|output| output.value).sum();
+            // implicit fee for the miner
             let miner_fee = all_inputs - all_outputs;
             miner_fee
         });
