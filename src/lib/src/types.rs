@@ -48,9 +48,34 @@ impl Blockchain {
     }
 
     // add a transaction to mempool
-    pub fn add_to_mempool(&mut self, transaction: Transaction) {
+    pub fn add_to_mempool(&mut self, transaction: Transaction) -> Result<()> {
+        // validate transaction before insertion
+        //all inputs must match known UTXOS, and must be unique
+        let mut known_inputs = HashSet::new();
+        for input in &transaction.inputs {
+            if !self.utxos.contains_key(&input.prev_transaction_output_hash) {
+                return Err(ReuError::InvalidTransaction);
+            }
+            if known_inputs.contains(&input.prev_transaction_output_hash) {
+                return Err(ReuError::InvalidTransaction);
+            }
+            known_inputs.insert(input.prev_transaction_output_hash);
+        }
+        let all_inputs = transaction
+            .inputs
+            .iter()
+            .map(|input| {
+                self.utxos
+                    .get(&input.prev_transaction_output_hash)
+                    .expect("BUG: impossible")
+                    .value
+            })
+            .sum::<u64>();
+        let all_outputs = transaction.outputs.iter().map(|output| output.value).sum();
+        if all_inputs < all_outputs {
+            return Err(ReuError::InvalidTransaction);
+        }
         self.mempool.push(transaction);
-
         // sort by miner fee
         self.mempool.sort_by_key(|transaction| {
             // sum total value available from previous outputs
@@ -70,6 +95,7 @@ impl Blockchain {
             let miner_fee = all_inputs - all_outputs;
             miner_fee
         });
+        Ok(())
     }
 
     pub fn add_blocks(&mut self, block: Block) -> Result<()> {
