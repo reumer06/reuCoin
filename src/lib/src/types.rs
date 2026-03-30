@@ -63,6 +63,36 @@ impl Blockchain {
             }
             known_inputs.insert(input.prev_transaction_output_hash);
         }
+        for input in &transaction.inputs {
+            if let Some((true, _)) = self.utxos.get(&input.prev_transaction_output_hash) {
+                let referencing_transaction =
+                    self.mempool.iter().enumerate().find(|(_, transaction)| {
+                        transaction
+                            .outputs
+                            .iter()
+                            .any(|output| output.hash() == input.prev_transaction_output_hash)
+                    });
+
+                // if we have found one, unmark all of its utxos
+                if let Some((idx, referencing_transaction)) = referencing_transaction {
+                    for input in &referencing_transaction.inputs {
+                        // set all utxos from this transaction to false
+                        self.utxos
+                            .entry(input.prev_transaction_output_hash)
+                            .and_modify(|(marked, _)| {
+                                *marked = false;
+                            });
+                    }
+                    self.mempool.remove(idx);
+                } else {
+                    self.utxos
+                        .entry(input.prev_transaction_output_hash)
+                        .and_modify(|(marked, _)| {
+                            *marked = false;
+                        });
+                }
+            }
+        }
         let all_inputs = transaction
             .inputs
             .iter()
