@@ -43,7 +43,7 @@ impl Blockchain {
         self.blocks.len() as u64
     }
 
-    pub fn mempool(&self) -> &[Transaction] {
+    pub fn mempool(&self) -> &[(DateTime<Utc>, Transaction)] {
         &self.mempool
     }
 
@@ -111,9 +111,19 @@ impl Blockchain {
         if all_inputs < all_outputs {
             return Err(ReuError::InvalidTransaction);
         }
+        // Mark the UTXOs as used
+        for input in &transaction.inputs {
+            self.utxos
+                .entry(input.prev_transaction_output_hash)
+                .and_modify(|(marked, _)| {
+                    *marked = true;
+                });
+        }
+
+        // push the transaction to the mempool
         self.mempool.push((Utc::now(), transaction));
         // sort by miner fee
-        self.mempool.sort_by_key(|transaction| {
+        self.mempool.sort_by_key(|(_, transaction)| {
             // sum total value available from previous outputs
             let all_inputs = transaction
                 .inputs
