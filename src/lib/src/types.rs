@@ -167,7 +167,7 @@ impl Blockchain {
             block.transactions.iter().map(|tx| tx.hash()).collect();
 
         self.mempool
-            .retain(|tx| !block_transactions.contains(&tx.hash()));
+            .retain(|tx| !block_transactions.contains(&tx.1.hash()));
 
         // check if the block's hash is less than target
         if !block.header.hash().matches_target(block.header.target) {
