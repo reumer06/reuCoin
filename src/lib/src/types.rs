@@ -13,7 +13,7 @@ use uuid::Uuid;
 pub struct Blockchain {
     utxos: HashMap<Hash, (bool, TransactionOutput)>,
     #[serde(default, skip_serializing)]
-    mempool: Vec<Transaction>,
+    mempool: Vec<(DateTime<Utc>, Transaction)>,
     target: U256,
     blocks: Vec<Block>,
 }
