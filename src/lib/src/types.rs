@@ -53,6 +53,8 @@ impl Blockchain {
         //all inputs must match known UTXOS, and must be unique
         let mut known_inputs = HashSet::new();
         for input in &transaction.inputs {
+            // check if any of the utxos have the bool mark set to true
+            // if so, find the transaction that references them in mempool, remove it, and set all the utxos it reference to false
             if !self.utxos.contains_key(&input.prev_transaction_output_hash) {
                 return Err(ReuError::InvalidTransaction);
             }
