@@ -111,7 +111,7 @@ impl Blockchain {
         if all_inputs < all_outputs {
             return Err(ReuError::InvalidTransaction);
         }
-        self.mempool.push(transaction);
+        self.mempool.push((Utc::now(), transaction));
         // sort by miner fee
         self.mempool.sort_by_key(|transaction| {
             // sum total value available from previous outputs
