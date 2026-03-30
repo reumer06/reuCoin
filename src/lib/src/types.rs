@@ -11,22 +11,127 @@ use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Blockchain {
-    pub utxos: HashMap<Hash, TransactionOutput>,
-    #[serde(default)]
-    pub mempool: HashMap<Hash, Transaction>,
-    pub target: U256,
-    pub blocks: Vec<Block>,
+    utxos: HashMap<Hash, (bool, TransactionOutput)>,
+    #[serde(default, skip_serializing)]
+    mempool: Vec<Transaction>,
+    target: U256,
+    blocks: Vec<Block>,
 }
 
 impl Blockchain {
     pub fn new() -> Self {
         Blockchain {
             utxos: HashMap::new(),
-            mempool: HashMap::new(),
+            mempool: vec![],
             blocks: vec![],
             target: crate::MIN_TARGET,
         }
     }
+    pub fn utxos(&self) -> &HashMap<Hash, (bool, TransactionOutput)> {
+        &self.utxos
+    }
+
+    pub fn target(&self) -> U256 {
+        self.target
+    }
+
+    pub fn blocks(&self) -> impl Iterator<Item = &Block> {
+        self.blocks.iter()
+    }
+
+    pub fn block_height(&self) -> u64 {
+        self.blocks.len() as u64
+    }
+
+    pub fn mempool(&self) -> &[Transaction] {
+        &self.mempool
+    }
+
+    // add a transaction to mempool
+    pub fn add_to_mempool(&mut self, transaction: Transaction) -> Result<()> {
+        // validate transaction before insertion
+        //all inputs must match known UTXOS, and must be unique
+        let mut known_inputs = HashSet::new();
+        for input in &transaction.inputs {
+            // check if any of the utxos have the bool mark set to true
+            // if so, find the transaction that references them in mempool, remove it, and set all the utxos it reference to false
+            if !self.utxos.contains_key(&input.prev_transaction_output_hash) {
+                return Err(ReuError::InvalidTransaction);
+            }
+            if known_inputs.contains(&input.prev_transaction_output_hash) {
+                return Err(ReuError::InvalidTransaction);
+            }
+            known_inputs.insert(input.prev_transaction_output_hash);
+        }
+        for input in &transaction.inputs {
+            if let Some((true, _)) = self.utxos.get(&input.prev_transaction_output_hash) {
+                let referencing_transaction =
+                    self.mempool.iter().enumerate().find(|(_, transaction)| {
+                        transaction
+                            .outputs
+                            .iter()
+                            .any(|output| output.hash() == input.prev_transaction_output_hash)
+                    });
+
+                // if we have found one, unmark all of its utxos
+                if let Some((idx, referencing_transaction)) = referencing_transaction {
+                    for input in &referencing_transaction.inputs {
+                        // set all utxos from this transaction to false
+                        self.utxos
+                            .entry(input.prev_transaction_output_hash)
+                            .and_modify(|(marked, _)| {
+                                *marked = false;
+                            });
+                    }
+                    self.mempool.remove(idx);
+                } else {
+                    self.utxos
+                        .entry(input.prev_transaction_output_hash)
+                        .and_modify(|(marked, _)| {
+                            *marked = false;
+                        });
+                }
+            }
+        }
+        let all_inputs = transaction
+            .inputs
+            .iter()
+            .map(|input| {
+                self.utxos
+                    .get(&input.prev_transaction_output_hash)
+                    .expect("BUG: impossible")
+                    .1
+                    .value
+            })
+            .sum::<u64>();
+        let all_outputs = transaction.outputs.iter().map(|output| output.value).sum();
+        if all_inputs < all_outputs {
+            return Err(ReuError::InvalidTransaction);
+        }
+        self.mempool.push(transaction);
+        // sort by miner fee
+        self.mempool.sort_by_key(|transaction| {
+            // sum total value available from previous outputs
+            let all_inputs = transaction
+                .inputs
+                .iter()
+                .map(|input| {
+                    self.utxos
+                        .get(&input.prev_transaction_output_hash)
+                        .expect("BUG: Impossible")
+                        .1
+                        .value
+                })
+                .sum::<u64>();
+            // sum value sent to new recipients
+            let all_outputs: u64 = transaction.outputs.iter().map(|output| output.value).sum();
+            // implicit fee for the miner
+            let miner_fee = all_inputs - all_outputs;
+            miner_fee
+        });
+        Ok(())
+    }
+
     pub fn add_blocks(&mut self, block: Block) -> Result<()> {
         if self.blocks.is_empty() {
             if block.header.prev_block_hash != Hash::zero() {
@@ -49,7 +154,7 @@ impl Blockchain {
             block.transactions.iter().map(|tx| tx.hash()).collect();
 
         self.mempool
-            .retain(|_, tx| !block_transactions.contains(&tx.hash()));
+            .retain(|tx| !block_transactions.contains(&tx.hash()));
 
         // check if the block's hash is less than target
         if !block.header.hash().matches_target(block.header.target) {
@@ -124,7 +229,7 @@ impl Blockchain {
                 }
                 // add newly in created outputs
                 for output in &transaction.outputs {
-                    self.utxos.insert(output.hash(), output.clone());
+                    self.utxos.insert(output.hash(), (false, output.clone()));
                 }
             }
         }
@@ -150,7 +255,7 @@ impl Block {
     pub fn verify_transactions(
         &self,
         predicted_block_height: u64,
-        utxos: &HashMap<Hash, TransactionOutput>,
+        utxos: &HashMap<Hash, (bool, TransactionOutput)>,
     ) -> Result<()> {
         let mut inputs: HashMap<Hash, TransactionOutput> = HashMap::new();
         // reject complete empty blocks
@@ -164,7 +269,9 @@ impl Block {
             let mut input_value = 0;
             let mut output_value = 0;
             for input in &transaction.inputs {
-                let prev_output = utxos.get(&input.prev_transaction_output_hash);
+                let prev_output = utxos
+                    .get(&input.prev_transaction_output_hash)
+                    .map(|(_, output)| output);
                 if prev_output.is_none() {
                     return Err(ReuError::InvalidTransaction);
                 }
@@ -197,7 +304,7 @@ impl Block {
     pub fn verify_coinbase_transaction(
         &self,
         predicted_block_height: u64,
-        utxos: &HashMap<Hash, TransactionOutput>,
+        utxos: &HashMap<Hash, (bool, TransactionOutput)>,
     ) -> Result<()> {
         let coinbase_tran = &self.transactions[0];
         if coinbase_tran.inputs.len() != 0 {
@@ -220,12 +327,17 @@ impl Block {
         Ok(())
     }
 
-    pub fn calculate_miner_fess(&self, utxos: &HashMap<Hash, TransactionOutput>) -> Result<u64> {
+    pub fn calculate_miner_fess(
+        &self,
+        utxos: &HashMap<Hash, (bool, TransactionOutput)>,
+    ) -> Result<u64> {
         let mut inputs: HashMap<Hash, TransactionOutput> = HashMap::new();
         let mut outputs: HashMap<Hash, TransactionOutput> = HashMap::new();
         for transactions in self.transactions.iter().skip(1) {
             for input in &transactions.inputs {
-                let prev_outputs = utxos.get(&input.prev_transaction_output_hash);
+                let prev_outputs = utxos
+                    .get(&input.prev_transaction_output_hash)
+                    .map(|(_, outputs)| outputs);
                 if prev_outputs.is_none() {
                     return Err(ReuError::InvalidTransaction);
                 }
