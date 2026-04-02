@@ -147,11 +147,10 @@ impl Blockchain {
 
     pub fn clean_mempool(&mut self) {
         let now = Utc::now();
+        let max_age = chrono::Duration::seconds(crate::MAX_MEMPOOL_TRANSACTION_AGE as i64)
         let mut utxos_hashes_to_unmark: Vec<Hash> = vec![];
         self.mempool.retain(|(timestamp, transaction)| {
-            if now - *timestamp
-                > chrono::Duration::seconds(crate::MAX_MEMPOOL_TRANSACTION_AGE as i64)
-            {
+            if now - *timestamp > max_age {
                 // push all utxos to unmark the vector to unmark it later
                 utxos_hashes_to_unmark.extend(
                     transaction
@@ -159,12 +158,12 @@ impl Blockchain {
                         .iter()
                         .map(|input| input.prev_transaction_output_hash),
                 );
-                false
+                false // remove from mempool
             } else {
-                true
+                true    // keep in mempool
             }
         });
-        // unmark all the UTXOs
+        // unmark the UTXOs
         for hash in utxos_hashes_to_unmark {
             self.utxos.entry(hash).and_modify(|(marked, _)| {
                 *marked = false;
