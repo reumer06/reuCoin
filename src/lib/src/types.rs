@@ -145,6 +145,7 @@ impl Blockchain {
         Ok(())
     }
 
+    pub fn clean_mempool(&mut self) {}
     pub fn add_blocks(&mut self, block: Block) -> Result<()> {
         if self.blocks.is_empty() {
             if block.header.prev_block_hash != Hash::zero() {
