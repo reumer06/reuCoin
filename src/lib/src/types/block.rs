@@ -1,3 +1,4 @@
+use super::{Transaction, TransactionOutput};
 use crate::U256;
 use crate::error::ReuError;
 use crate::sha256::Hash;
@@ -5,7 +6,6 @@ use crate::util::MerkleRoot;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use super::{Transaction,TransactionOutput}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Block {
@@ -96,7 +96,7 @@ impl Block {
             return Err(ReuError::InvalidTransaction);
         }
         Ok(())
-    }   
+    }
 
     pub fn calculate_miner_fess(
         &self,
