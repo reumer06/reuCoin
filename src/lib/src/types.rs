@@ -1,3 +1,7 @@
+mod block;
+mod blockchain;
+mod transaction;
+
 use crate::U256;
 use crate::crypto::{PublicKey, Signature};
 use crate::error::{Result, ReuError};
