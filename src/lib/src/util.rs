@@ -1,7 +1,8 @@
 use crate::{sha256::Hash, types::Transaction};
 use serde::{Deserialize, Serialize};
+use std::fs::File;
 use std::io::{Read, Result as IoResult, Write};
-
+use std::path::Path;
 pub trait Saveable {
     fn load<I: Read>(&self, reader: I);
     fn save<O: Write>(&self, reader: O);
