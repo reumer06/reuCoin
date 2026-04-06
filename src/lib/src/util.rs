@@ -1,6 +1,11 @@
 use crate::{sha256::Hash, types::Transaction};
 use serde::{Deserialize, Serialize};
+use std::io::{Read, Result as IoResult, Write};
 
+pub trait Saveable {
+    fn load<I: Read>(&self, reader: I);
+    fn save<O: Write>(&self, reader: O);
+}
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct MerkleRoot(Hash);
 
