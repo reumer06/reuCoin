@@ -38,12 +38,17 @@ impl Transaction {
         Hash::hash(self)
     }
 }
-
 impl Saveable for Transaction {
     fn load<I: Read>(reader: I) -> IoResult<Self> {
-        todo!()
+        ciborium::de::from_reader(reader).map_err(|_| {
+            IoError::new(
+                IoErrorKind::InvalidData,
+                "Failed to deserialize transaction",
+            )
+        })
     }
     fn save<O: Write>(&self, writer: O) -> IoResult<()> {
-        todo!()
+        ciborium::ser::into_writer(self, writer)
+            .map_err(|_| IoError::new(IoErrorKind::InvalidData, "Failed to serialize transaction"))
     }
 }
