@@ -38,3 +38,12 @@ impl Transaction {
         Hash::hash(self)
     }
 }
+
+impl Saveable for Transaction {
+    fn load<I: Read>(reader: I) -> IoResult<Self> {
+        todo!()
+    }
+    fn save<O: Write>(&self, writer: O) -> IoResult<()> {
+        todo!()
+    }
+}
