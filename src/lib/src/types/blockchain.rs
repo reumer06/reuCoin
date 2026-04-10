@@ -3,11 +3,12 @@ use crate::U256;
 use crate::error::{Result, ReuError};
 use crate::sha256::Hash;
 use crate::util::MerkleRoot;
+use crate::util::Saveable;
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
-
+use std::io::{Error as IoError, ErrorKind as IoErrorKind, Read, Result as IoResult, Write};
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Blockchain {
     utxos: HashMap<Hash, (bool, TransactionOutput)>,
