@@ -4,8 +4,8 @@ use crate::sha256::Hash;
 use ecdsa::signature::Signer;
 use ecdsa::signature::Verifier;
 use k256::Secp256k1;
+use rand;
 use serde::{Deserialize, Serialize};
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Signature(ECDSASignature<Secp256k1>);
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -13,6 +13,17 @@ pub struct Signature(ECDSASignature<Secp256k1>);
 pub struct PublicKey(VerifyingKey<Secp256k1>);
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PrivateKey(#[serde(with = "signkey_serde")] pub SigningKey<Secp256k1>); //  use serialize and deserialize from this mod.
+
+impl PrivateKey {
+    pub fn new_key() -> Self {
+        let bytes: [u8; 32] = rand::random();
+        let signing_key = SigningKey::from_slice(&bytes).expect("failed to create signing key");
+        PrivateKey(signing_key)
+    }
+    pub fn public_key(&self) -> PublicKey {
+        PublicKey(self.0.verifying_key().clone())
+    }
+}
 mod signkey_serde {
     use serde::Deserialize;
 
