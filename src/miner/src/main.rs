@@ -9,4 +9,11 @@ fn main() {
         eprintln!("Usage: miner <block_file> <steps>");
         exit(1);
     };
+    // parse steps count
+    let steps: usize = if let Ok(s @ 1..=usize::MAX) = steps.parse() {
+        s
+    } else {
+        eprintln!("<steps> should be a positive integer");
+        exit(1);
+    };
 }
