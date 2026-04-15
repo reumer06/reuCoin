@@ -1,3 +1,5 @@
+use lib::types::Block;
+use lib::util::Saveable;
 use std::env;
 use std::process::exit;
 
@@ -16,4 +18,14 @@ fn main() {
         eprintln!("<steps> should be a positive integer");
         exit(1);
     };
+    let og_block = Block::load_from_file(path).expect("Failed to load block");
+    let mut block = og_block.clone();
+
+    while !block.header.mine(steps) {
+        println!("mining...");
+    }
+    println!("original:{:#?}", og_block);
+    println!("hash: {}", og_block.header.hash());
+    println!("final: {:#?}", block);
+    println!("hash: {}", block.header.hash());
 }
