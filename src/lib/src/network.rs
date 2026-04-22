@@ -2,7 +2,6 @@ use crate::crypto::PublicKey;
 use crate::types::{Block, Transaction, TransactionOutput};
 use serde::{Deserialize, Serialize};
 use std::io::{Error as IoError, Read, Write};
-use std::path::StripPrefixError;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum Message {
