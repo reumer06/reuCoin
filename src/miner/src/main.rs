@@ -1,4 +1,5 @@
 use lib::crypto::PublicKey;
+use lib::network::Message;
 use lib::util::Saveable;
 use std::env;
 use std::process::exit;
@@ -30,10 +31,12 @@ async fn main() {
     };
     println!("Connecting to {address} to mine with {PublicKey:?}");
     let mut stream = match TcpStream::connect(&address).await {
-        Ok(s) => s,
+        Ok(stream) => stream,
         Err(e) => {
             eprintln!("Failed to connect to {}: {}", address, e);
             exit(1);
         }
     };
+    let message = Message::FetchTemplate(PublicKey);
+    message.send(&mut stream);
 }
