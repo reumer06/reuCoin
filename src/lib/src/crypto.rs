@@ -29,6 +29,26 @@ impl Saveable for PrivateKey {
     }
 }
 
+// save and load as PEM
+impl Saveable for PublicKey {
+    fn load<I: Read>(mut reader: I) -> IoResult<Self> {
+        // read PEM-encoded public key into string
+        let mut buf = String::new();
+        reader.read_to_string(&mut buf)?;
+        let public_key = buf
+            .parse()
+            .map_err(|_| IoError::new(IoErrorKind::InvalidData, "Failed to parse PublicKey"))?;
+        Ok(PublicKey(public_key))
+    }
+    fn save<O: Write>(&self, mut writer: O) -> IoResult<()> {
+        let s = self
+            .0
+            .to_public_key_pem(Default::default())
+            .map_err(|_| IoError::new(IoErrorKind::InvalidData, "Failed to serialize PublicKey"))?;
+        writer.write_all(s.as_bytes())?;
+        Ok(())
+    }
+}
 impl PrivateKey {
     pub fn new_key() -> Self {
         let bytes: [u8; 32] = rand::random();
