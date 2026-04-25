@@ -1,6 +1,4 @@
 use lib::crypto::PublicKey;
-use lib::network::Message;
-use lib::types::Block;
 use lib::util::Saveable;
 use std::env;
 use std::process::exit;
@@ -26,11 +24,11 @@ async fn main() {
         None => usage(),
     };
 
-    let Ok(PublicKey) = Public::load_from_file(&public_key_file) else {
+    let Ok(PublicKey) = PublicKey::load_from_file(&public_key_file) else {
         eprintln!("Error reading public key from file {} ", public_key_file);
         exit(1);
     };
-    let println!("Connecting to {address} to mine with {public_key:?}");
+    println!("Connecting to {address} to mine with {PublicKey:?}");
     let mut stream = match TcpStream::connect(&address).await {
         Ok(s) => s,
         Err(e) => {
