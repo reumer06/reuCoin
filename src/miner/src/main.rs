@@ -15,6 +15,15 @@ use tokio::net::TcpStream;
 use tokio::sync::Mutex;
 use tokio::time::{Duration, interval};
 
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct Cli {
+    #[arg[short, long]]
+    address: String,
+    #[arg(short, long)]
+    public_key_file: String,
+}
+
 fn usage() -> ! {
     eprintln!(
         "Usage: {} <address> <public_key_file>",
