@@ -1,11 +1,14 @@
-use ecdsa::{Signature as ECDSASignature, SigningKey, VerifyingKey};
-
 use crate::sha256::Hash;
+use crate::util::Saveable;
 use ecdsa::signature::Signer;
 use ecdsa::signature::Verifier;
+use ecdsa::{Signature as ECDSASignature, SigningKey, VerifyingKey};
 use k256::Secp256k1;
+use k256::pkcs8::spki;
 use rand;
 use serde::{Deserialize, Serialize};
+use spki::EncodePublicKey;
+use std::io::{Error as IoError, ErrorKind as IoErrorKind, Read, Result as IoResult, Write};
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Signature(ECDSASignature<Secp256k1>);
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -13,6 +16,18 @@ pub struct Signature(ECDSASignature<Secp256k1>);
 pub struct PublicKey(VerifyingKey<Secp256k1>);
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PrivateKey(#[serde(with = "signkey_serde")] pub SigningKey<Secp256k1>); //  use serialize and deserialize from this mod.
+
+impl Saveable for PrivateKey {
+    fn load<I: Read>(reader: I) -> IoResult<Self> {
+        ciborium::de::from_reader(reader)
+            .map_err(|_| IoError::new(IoErrorKind::InvalidData, "Failed to deserialize data"))
+    }
+    fn save<O: Write>(&self, writer: O) -> IoResult<()> {
+        ciborium::ser::into_writer(self, writer)
+            .map_err(|_| IoError::new(IoErrorKind::InvalidData, "Failed to serialize data"))?;
+        Ok(())
+    }
+}
 
 impl PrivateKey {
     pub fn new_key() -> Self {
