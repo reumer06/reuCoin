@@ -18,8 +18,9 @@ use tokio::time::{Duration, interval};
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
-    #[arg[short, long]]
+    #[arg(short, long)]
     address: String,
+
     #[arg(short, long)]
     public_key_file: String,
 }
@@ -30,6 +31,16 @@ struct Miner {
     mining: Arc<AtomicBool>,
     mined_block_sender: flume::Sender<Block>,
     miner_block_receiver: flume::Receiver<Block>,
+}
+
+impl Miner {
+    async fn new(address: String, public_key: PublicKey) -> Result<Self> {}
+    async fn run(&self) -> Result<()> {}
+    fn spawn_mining_thread(&self) -> thread::JoinHandle<()> {}
+    async fn fetch_and_validate_template(&self) -> Result<()> {}
+    async fn fetch_template(&self) -> Result<()> {}
+    async fn validate_template(&self) -> Result<()> {}
+    async fn submit_block(&self, block: Block) -> Result<()> {}
 }
 // fn usage() -> ! {
 //     eprintln!(
