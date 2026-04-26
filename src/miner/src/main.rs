@@ -67,13 +67,6 @@ impl Miner {
     // async fn validate_template(&self) -> Result<()> {}
     // async fn submit_block(&self, block: Block) -> Result<()> {}
 }
-// fn usage() -> ! {
-//     eprintln!(
-//         "Usage: {} <address> <public_key_file>",
-//         env::args().next().unwrap()
-//     );
-//     exit(1);
-// }
 
 #[tokio::main]
 async fn main() -> Result<()> {
