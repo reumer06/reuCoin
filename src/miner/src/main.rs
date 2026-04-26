@@ -46,7 +46,21 @@ impl Miner {
             miner_block_receiver,
         })
     }
-    // async fn run(&self) -> Result<()> {}
+    async fn run(&self) -> Result<()> {
+        self.spawn_mining_thread();
+        let mut template_interval = interval(Duration::from_secs(5));
+        loop {
+            let reciever_clone = self.miner_block_receiver.clone();
+            tokio::select! {
+                _ = template_interval.tick() => {
+                    self.fetch_and_validate_template().await?;
+                }
+                Ok(mined_block) =reciever_clone.recv_async() =>{
+                    self.submit_block(mined_block).await?;
+                }
+            }
+        }
+    }
     // fn spawn_mining_thread(&self) -> thread::JoinHandle<()> {}
     // async fn fetch_and_validate_template(&self) -> Result<()> {}
     // async fn fetch_template(&self) -> Result<()> {}
