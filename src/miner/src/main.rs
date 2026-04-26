@@ -34,13 +34,24 @@ struct Miner {
 }
 
 impl Miner {
-    async fn new(address: String, public_key: PublicKey) -> Result<Self> {}
-    async fn run(&self) -> Result<()> {}
-    fn spawn_mining_thread(&self) -> thread::JoinHandle<()> {}
-    async fn fetch_and_validate_template(&self) -> Result<()> {}
-    async fn fetch_template(&self) -> Result<()> {}
-    async fn validate_template(&self) -> Result<()> {}
-    async fn submit_block(&self, block: Block) -> Result<()> {}
+    async fn new(address: String, public_key: PublicKey) -> Result<Self> {
+        let stream = TcpStream::connect(&address).await?;
+        let (mined_block_sender, miner_block_receiver) = flume::unbounded();
+        Ok(Self {
+            public_key,
+            stream: Mutex::new(stream),
+            current_template: Arc::new(std::sync::Mutex::new(None)),
+            mining: Arc::new(AtomicBool::new(false)),
+            mined_block_sender,
+            miner_block_receiver,
+        })
+    }
+    // async fn run(&self) -> Result<()> {}
+    // fn spawn_mining_thread(&self) -> thread::JoinHandle<()> {}
+    // async fn fetch_and_validate_template(&self) -> Result<()> {}
+    // async fn fetch_template(&self) -> Result<()> {}
+    // async fn validate_template(&self) -> Result<()> {}
+    // async fn submit_block(&self, block: Block) -> Result<()> {}
 }
 // fn usage() -> ! {
 //     eprintln!(
