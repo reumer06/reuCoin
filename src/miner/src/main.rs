@@ -81,7 +81,16 @@ impl Miner {
             thread::yield_now();
         })
     }
-    // async fn fetch_and_validate_template(&self) -> Result<()> {}
+    async fn fetch_and_validate_template(&self) -> Result<()> {
+        if !self.mining.load(Ordering::Relaxed) {
+            // if not mining
+            self.fetch_template().await?;
+        } else {
+            // if mining check if template is still valid
+            self.validate_template().await?;
+        }
+        Ok(())
+    }
     // async fn fetch_template(&self) -> Result<()> {}
     // async fn validate_template(&self) -> Result<()> {}
     // async fn submit_block(&self, block: Block) -> Result<()> {}
