@@ -4,8 +4,6 @@ use lib::crypto::PublicKey;
 use lib::network::Message;
 use lib::types::Block;
 use lib::util::Saveable;
-use std::env;
-use std::process::exit;
 use std::sync::{
     Arc,
     atomic::{AtomicBool, Ordering},
@@ -24,6 +22,7 @@ struct Cli {
     #[arg(short, long)]
     public_key_file: String,
 }
+
 struct Miner {
     public_key: PublicKey,
     stream: Mutex<TcpStream>,
@@ -46,104 +45,98 @@ impl Miner {
             miner_block_receiver,
         })
     }
+
     async fn run(&self) -> Result<()> {
         self.spawn_mining_thread();
         let mut template_interval = interval(Duration::from_secs(5));
         loop {
-            let reciever_clone = self.miner_block_receiver.clone();
             tokio::select! {
                 _ = template_interval.tick() => {
-                    self.fetch_and_validate_template().await?;
+                    let _ = self.fetch_and_validate_template().await;
                 }
-                Ok(mined_block) =reciever_clone.recv_async() =>{
+                Ok(mined_block) = self.miner_block_receiver.recv_async() => {
                     self.submit_block(mined_block).await?;
                 }
             }
         }
     }
+
     fn spawn_mining_thread(&self) -> thread::JoinHandle<()> {
-        let template = self.current_template.clone();
+        let template_arc = self.current_template.clone();
         let mining = self.mining.clone();
         let sender = self.mined_block_sender.clone();
+
         thread::spawn(move || {
             loop {
                 if mining.load(Ordering::Relaxed) {
-                    if let Some(mut block) = template.lock().unwrap().clone() {
-                        println!("Mining block with target: {}", block.header.target);
+                    let block_opt = template_arc.lock().unwrap().clone();
+                    if let Some(mut block) = block_opt {
+                        if block.header.mine(2_000_000) {
+                            let _ = sender.send(block);
+                            mining.store(false, Ordering::Relaxed);
+                        }
                     }
-                    if block.header.mine(2_000_000) {
-                        println!("Block mined: {}", block.hash());
-                        sender.send(block).expect("Failed to send mined block");
-                        mining.store(false, Ordering::Relaxed);
-                    }
+                } else {
+                    thread::sleep(std::time::Duration::from_millis(100));
                 }
             }
-            thread::yield_now();
         })
     }
+
     async fn fetch_and_validate_template(&self) -> Result<()> {
         if !self.mining.load(Ordering::Relaxed) {
-            // if not mining
             self.fetch_template().await?;
         } else {
-            // if mining check if template is still valid
             self.validate_template().await?;
         }
         Ok(())
     }
+
     async fn fetch_template(&self) -> Result<()> {
-        println!("Fetching new template");
         let message = Message::FetchTemplate(self.public_key.clone());
         let mut stream_lock = self.stream.lock().await;
-        message.send_async(&mut stream_lock).await?;
-        drop(stream_lock);
-        let mut stream_lock = self.stream.lock().await;
-        match Message::recieve_async(&mut *stream_lock).await? {
+        message.send_async(&mut *stream_lock).await?;
+
+        match Message::receive_async(&mut *stream_lock).await? {
             Message::Template(template) => {
-                drop(stream_lock);
-                println!(
-                    "Recieved new template with target : {}",
-                    template.header.target
-                );
                 *self.current_template.lock().unwrap() = Some(template);
                 self.mining.store(true, Ordering::Relaxed);
                 Ok(())
             }
             _ => Err(anyhow!(
-                "Unexpected message received while fetching template!"
+                "Unexpected message received while fetching template"
             )),
         }
     }
+
     async fn validate_template(&self) -> Result<()> {
-        if let Some(template) = self.current_template.lock().unwrap().clone() {
+        let template_to_validate = self.current_template.lock().unwrap().clone();
+        if let Some(template) = template_to_validate {
             let message = Message::ValidateTemplate(template);
             let mut stream_lock = self.stream.lock().await;
             message.send_async(&mut *stream_lock).await?;
-            drop(stream_lock);
-            let mut stream_lock = self.stream.lock().await;
 
             match Message::receive_async(&mut *stream_lock).await? {
-                Message::TemplateValidity(valid) => drop(stream_lock);
-                if !valid {
-                    println!("Current template is no longer valid");
-                    self.mining.store(false,Ordering::Relaxed);
-                } else  {
-                println!("Current template is valid");
+                Message::TemplateValidity(valid) => {
+                    if !valid {
+                        self.mining.store(false, Ordering::Relaxed);
+                    }
+                    Ok(())
                 }
-                Ok(())
+                _ => Err(anyhow!(
+                    "Unexpected message received when validating template"
+                )),
             }
-            _ => Err(anyhow!("Unexpected message received when validating template"))
-        }
-        else {
+        } else {
             Ok(())
         }
     }
+
     async fn submit_block(&self, block: Block) -> Result<()> {
-        println!("Submitting mined block");
         let message = Message::SubmitTemplate(block);
         let mut stream_lock = self.stream.lock().await;
         message.send_async(&mut *stream_lock).await?;
-        self.mining.store(false,Ordering::Relaxed);
+        self.mining.store(false, Ordering::Relaxed);
         Ok(())
     }
 }
