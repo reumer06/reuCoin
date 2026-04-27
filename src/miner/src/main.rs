@@ -12,6 +12,7 @@ use std::sync::{
 };
 use std::thread;
 use tokio::net::TcpStream;
+use tokio::net::windows::named_pipe::PipeMode::Message;
 use tokio::sync::Mutex;
 use tokio::time::{Duration, interval};
 
@@ -91,7 +92,29 @@ impl Miner {
         }
         Ok(())
     }
-    // async fn fetch_template(&self) -> Result<()> {}
+    async fn fetch_template(&self) -> Result<()> {
+        println!("Fetching new template");
+        let message = Message::FetchTemplate(self.public_key.clone());
+        let mut stream_lock = self.stream.lock().await;
+        message.send_async(&mut stream_lock).await?;
+        drop(stream_lock);
+        let mut stream_lock = self.stream.lock().await;
+        match Message::recieve_async(&mut *stream_lock).await? {
+            Message::Template(template) => {
+                drop(stream_lock);
+                println!(
+                    "Recieved new template with target : {}",
+                    template.header.target
+                );
+                *self.current_template.lock().unwrap() = Some(template);
+                self.mining.store(true, Ordering::Relaxed);
+                Ok(())
+            }
+            _ => Err(anyhow!(
+                "Unexpected message received while fetching template!"
+            )),
+        }
+    }
     // async fn validate_template(&self) -> Result<()> {}
     // async fn submit_block(&self, block: Block) -> Result<()> {}
 }
