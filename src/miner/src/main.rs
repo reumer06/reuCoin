@@ -115,7 +115,30 @@ impl Miner {
             )),
         }
     }
-    // async fn validate_template(&self) -> Result<()> {}
+    async fn validate_template(&self) -> Result<()> {
+        if let Some(template) = self.current_template.lock().unwrap().clone() {
+            let message = Message::ValidateTemplate(template);
+            let mut stream_lock = self.stream.lock().await;
+            message.send_async(&mut *stream_lock).await?;
+            drop(stream_lock);
+            let mut stream_lock = self.stream.lock().await;
+
+            match Message::receive_async(&mut *stream_lock).await? {
+                Message::TemplateValidity(valid) => drop(stream_lock);
+                if !valid {
+                    println!("Current template is no longer valid");
+                    self.mining.store(false,Ordering::Relaxed);
+                } else  {
+                println!("Current template is valid");
+                }
+                Ok(())
+            }
+            _ => Err(anyhow!("Unexpected message received when validating template"))
+        }
+        else {
+            Ok(())
+        }
+    }
     // async fn submit_block(&self, block: Block) -> Result<()> {}
 }
 
