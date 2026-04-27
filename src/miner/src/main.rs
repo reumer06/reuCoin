@@ -12,7 +12,6 @@ use std::sync::{
 };
 use std::thread;
 use tokio::net::TcpStream;
-use tokio::net::windows::named_pipe::PipeMode::Message;
 use tokio::sync::Mutex;
 use tokio::time::{Duration, interval};
 
@@ -139,7 +138,14 @@ impl Miner {
             Ok(())
         }
     }
-    // async fn submit_block(&self, block: Block) -> Result<()> {}
+    async fn submit_block(&self, block: Block) -> Result<()> {
+        println!("Submitting mined block");
+        let message = Message::SubmitTemplate(block);
+        let mut stream_lock = self.stream.lock().await;
+        message.send_async(&mut *stream_lock).await?;
+        self.mining.store(false,Ordering::Relaxed);
+        Ok(())
+    }
 }
 
 #[tokio::main]
