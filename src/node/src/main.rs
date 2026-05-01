@@ -11,9 +11,9 @@ mod handler;
 mod util;
 #[derive(FromArgs)]
 struct Args {
-    #[args(option, default = "9000")]
+    #[argh(option, default = "9000")]
     port: u16,
-    #[args(option, default = "String::from(\"./blockchain.cbor\")")]
+    #[argh(option, default = "String::from(\"./blockchain.cbor\")")]
     blockchain_file: String,
     #[argh(positional)]
     nodes: Vec<String>,
