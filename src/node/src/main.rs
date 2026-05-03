@@ -9,12 +9,17 @@ use tokio::sync::RwLock;
 
 mod handler;
 mod util;
+
+/// command line arguments for the node
 #[derive(FromArgs)]
 struct Args {
+    /// port to listen on (default:9000).
     #[argh(option, default = "9000")]
     port: u16,
+    /// path to the blockchain storage file
     #[argh(option, default = "String::from(\"./blockchain.cbor\")")]
     blockchain_file: String,
+    /// list of initial seed nodes to connect to
     #[argh(positional)]
     nodes: Vec<String>,
 }
