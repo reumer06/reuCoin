@@ -45,7 +45,7 @@ async fn main() -> Result<()> {
         } else {
             let (longest_name, longest_count) = util::find_longest_blockchain_node().await?;
             // request the blockchain from the node with the longest blockchain
-            util::download_blockchain(&longest_count, longest_name).await?;
+            util::download_blockchain(&longest_name, longest_count).await?;
             println!("blockchain downloaded from {}", longest_name);
             // recalculate utxos
             {
