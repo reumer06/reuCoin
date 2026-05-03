@@ -9,7 +9,7 @@ pub async fn load_blockchain(blockchain_file: &str) -> Result<()> {
     println!("blockchain exits, file loading...");
     let new_blockchain = Blockchain::load_from_file(blockchain_file)?;
     println!("Blockchain loaded");
-    let mut blockchain = crate::BLOCKCHAIN.write().await?;
+    let mut blockchain = crate::BLOCKCHAIN.write().await;
     *blockchain = new_blockchain;
     println!("rebuilding utxos...");
     blockchain.rebuild_utxos();
@@ -21,3 +21,7 @@ pub async fn load_blockchain(blockchain_file: &str) -> Result<()> {
     println!("initialization complete");
     Ok(())
 }
+
+pub async fn populate_connections() {}
+pub async fn find_longest_chain_node() {}
+pub async fn download_blockchain() {}
