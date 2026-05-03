@@ -84,6 +84,7 @@ pub async fn download_blockchain(node: &str, count: u32) -> Result<()> {
     for i in 0..count as usize {
         let message = Message::FetchBlock(i);
         message.send_async(&mut *stream).await?;
+        let message = Message::receive_async(&mut *stream).await?;
         match message {
             Message::NewBlock(block) => {
                 let mut blockchain = crate::BLOCKCHAIN.write().await;
