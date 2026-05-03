@@ -21,9 +21,16 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    // Parse command line arguments
     let args: Args = argh::from_env();
+    // Access the parsed arguments
     let port = args.port;
     let block_chain_file = args.blockchain_file;
     let nodes = args.nodes;
+    // Check if blockchain_file exits
+    if Path::new(&block_chain_file).exists() {
+        util::load_blockchain(&block_chain_file).await?;
+    } else {
+    }
     Ok(())
 }
