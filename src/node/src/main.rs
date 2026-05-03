@@ -47,6 +47,16 @@ async fn main() -> Result<()> {
             // request the blockchain from the node with the longest blockchain
             util::download_blockchain(&longest_count, longest_name).await?;
             println!("blockchain downloaded from {}", longest_name);
+            // recalculate utxos
+            {
+                let mut blockchain = BLOCKCHAIN.write().await;
+                blockchain.rebuild_utxos();
+            }
+            // try to adjust difficulty
+            {
+                let mut blockchain = BLOCKCHAIN.write().await;
+                blockchain.try_adjust_target();
+            }
         }
     }
     Ok(())
