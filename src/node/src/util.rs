@@ -22,6 +22,31 @@ pub async fn load_blockchain(blockchain_file: &str) -> Result<()> {
     Ok(())
 }
 
-pub async fn populate_connections() {}
-pub async fn find_longest_chain_node() {}
+pub async fn populate_connections(nodes: &[String]) -> Result<()> {
+    println!("trying to connect to other nodes...");
+    for node in nodes {
+        println!("connecting to {}", node);
+        let mut stream = TcpStream::connect(&node).await?;
+        let message = Message::DiscoverNodes;
+        message.send_async(&mut stream).await?;
+        println!("sent DiscoverNodes to {}", node);
+        let message = Message::receive_async(&mut stream).await?;
+        match message {
+            Message::NodeList(child_nodes) => {
+                println!("received NodeList from {}", node);
+                for child_node in child_nodes {
+                    println!("adding node {}", child_node);
+                    let new_stream = TcpStream::connect(&child_node).await?;
+                    crate::NODES.insert(child_node, new_stream);
+                }
+            }
+            _ => {
+                println!("unexpected message from {}", node);
+            }
+        }
+        crate::NODES.insert(node.clone(), stream);
+    }
+    Ok(())
+}
+pub async fn find_longest_blockchain_node() {}
 pub async fn download_blockchain() {}
