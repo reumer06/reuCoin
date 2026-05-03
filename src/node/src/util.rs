@@ -79,4 +79,20 @@ pub async fn find_longest_blockchain_node() -> Result<(String, u32)> {
     }
     Ok((longest_name, longest_count as u32))
 }
-pub async fn download_blockchain() {}
+pub async fn download_blockchain(node: &str, count: u32) -> Result<()> {
+    let mut stream = crate::NODES.get_mut(node).unwrap();
+    for i in 0..count as usize {
+        let message = Message::FetchBlock(i);
+        message.send_async(&mut *stream).await?;
+        match message {
+            Message::NewBlock(block) => {
+                let mut blockchain = crate::BLOCKCHAIN.write().await;
+                blockchain.add_blocks(block)?;
+            }
+            _ => {
+                println!("unexpected message from {}", node);
+            }
+        }
+    }
+    Ok(())
+}
