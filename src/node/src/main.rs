@@ -43,6 +43,10 @@ async fn main() -> Result<()> {
         if nodes.is_empty() {
             println!("no initial nodes provided, starting as a seed node");
         } else {
+            let (longest_name, longest_count) = util::find_longest_blockchain_node().await?;
+            // request the blockchain from the node with the longest blockchain
+            util::download_blockchain(&longest_count, longest_name).await?;
+            println!("blockchain downloaded from {}", longest_name);
         }
     }
     Ok(())
