@@ -19,6 +19,12 @@ struct Args {
     nodes: Vec<String>,
 }
 
+#[dynamic]
+pub static BLOCKCHAIN: RwLock<Blockchain> = RwLock::new(Blockchain::new());
+
+// Node pool
+#[dynamic]
+pub static NODES: DashMap<String, TcpStream> = DashMap::new();
 #[tokio::main]
 async fn main() -> Result<()> {
     // Parse command line arguments
@@ -31,6 +37,13 @@ async fn main() -> Result<()> {
     if Path::new(&block_chain_file).exists() {
         util::load_blockchain(&block_chain_file).await?;
     } else {
+        println!("blockchain file does not exist!");
+        util::populate_connections(&nodes).await?;
+        println!("total amount of known nodes: {}", NODES.len());
+        if nodes.is_empty() {
+            println!("no initial nodes provided, starting as a seed node");
+        } else {
+        }
     }
     Ok(())
 }
