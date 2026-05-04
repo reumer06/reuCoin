@@ -3,6 +3,7 @@ use argh::FromArgs;
 use dashmap::DashMap;
 use lib::types::Blockchain;
 use static_init::dynamic;
+use std::fmt::format;
 use std::path::Path;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::RwLock;
@@ -38,6 +39,13 @@ async fn main() -> Result<()> {
     let port = args.port;
     let block_chain_file = args.blockchain_file;
     let nodes = args.nodes;
+    let addr = format!("0.0.0.0:{}", port);
+    let listner = TcpListener::bind(&addr).await?;
+    println!("Listening on {}", addr);
+    loop {
+        let (socket, _) = listner.accept().await?;
+        tokio::spawn(handler::handle_connection(socket));
+    }
     // Check if blockchain_file exits
     if Path::new(&block_chain_file).exists() {
         util::load_blockchain(&block_chain_file).await?;
