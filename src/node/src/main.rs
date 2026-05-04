@@ -40,13 +40,13 @@ async fn main() -> Result<()> {
     let block_chain_file = args.blockchain_file;
     let nodes = args.nodes;
     let addr = format!("0.0.0.0:{}", port);
-    let listner = TcpListener::bind(&addr).await?;
-    println!("Listening on {}", addr);
-    loop {
-        let (socket, _) = listner.accept().await?;
-        tokio::spawn(handler::handle_connection(socket));
-    }
+    let listener = TcpListener::bind(&addr).await?;
+
+    // periodically cleanup the mempool and save the blockchain
     // Check if blockchain_file exits
+    tokio::spawn(util::cleanup());
+    tokio::spawn(util::save(block_chain_file.clone()));
+
     if Path::new(&block_chain_file).exists() {
         util::load_blockchain(&block_chain_file).await?;
     } else {
@@ -71,6 +71,11 @@ async fn main() -> Result<()> {
                 blockchain.try_adjust_target();
             }
         }
+    }
+    println!("Listening on {}", addr);
+    loop {
+        let (socket, _) = listener.accept().await?;
+        tokio::spawn(handler::handle_connection(socket));
     }
     Ok(())
 }
