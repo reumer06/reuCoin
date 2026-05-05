@@ -4,7 +4,6 @@ use lib::sha256::Hash;
 use lib::types::{Block, BlockHeader, Transaction, TransactionOutput};
 use lib::util::MerkleRoot;
 use tokio::net::TcpStream;
-// use tokio::net::windows::named_pipe::PipeMode::Message;
 use uuid::Uuid;
 
 pub async fn handle_connection(mut socket: TcpStream) {
@@ -17,5 +16,22 @@ pub async fn handle_connection(mut socket: TcpStream) {
                 return;
             }
         };
+        use lib::network::Message::*;
+        match message {
+            UTXOs(_) | Template(_) | Difference(_) | TemplateValidity(_) | NodeList(_) => {
+                println!("neither a miner nor a wallet! Goodbye");
+                return;
+            }
+            FetchBlock(height) => {}
+            DiscoverNodes => {}
+            AskDifference(height) => {}
+            FetchUTXOs(key) => {}
+            NewBlock(block) => {}
+            NewTransaction(tx) => {}
+            ValidateTemplate(block_template) => {}
+            SubmitTemplate(block) => {}
+            SubmitTransaction(tx) => {}
+            FetchTemplate(pubkey) => {}
+        }
     }
 }
