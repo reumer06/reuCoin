@@ -30,7 +30,14 @@ pub async fn handle_connection(mut socket: TcpStream) {
                 let message = NewBlock(block);
                 message.send_async(&mut socket).await.unwrap();
             }
-            DiscoverNodes => {}
+            DiscoverNodes => {
+                let nodes = crate::NODES
+                    .iter()
+                    .map(|x| x.key().clone())
+                    .collect::<Vec<_>>();
+                let message = NodeList(nodes);
+                message.send_async(&mut socket).await.unwrap();
+            }
             AskDifference(height) => {}
             FetchUTXOs(key) => {}
             NewBlock(block) => {}
