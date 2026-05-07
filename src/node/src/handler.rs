@@ -22,7 +22,14 @@ pub async fn handle_connection(mut socket: TcpStream) {
                 println!("neither a miner nor a wallet! Goodbye");
                 return;
             }
-            FetchBlock(height) => {}
+            FetchBlock(height) => {
+                let blockchain = crate::BLOCKCHAIN.read().await;
+                let Some(block) = blockchain.blocks().nth(height as usize).cloned() else {
+                    return;
+                };
+                let message = NewBlock(block);
+                message.send_async(&mut socket).await.unwrap();
+            }
             DiscoverNodes => {}
             AskDifference(height) => {}
             FetchUTXOs(key) => {}
