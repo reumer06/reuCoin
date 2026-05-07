@@ -38,7 +38,12 @@ pub async fn handle_connection(mut socket: TcpStream) {
                 let message = NodeList(nodes);
                 message.send_async(&mut socket).await.unwrap();
             }
-            AskDifference(height) => {}
+            AskDifference(height) => {
+                let blockchain = crate::BLOCKCHAIN.read().await;
+                let count = blockchain.block_height() as i32 - height as i32;
+                let message = Difference(count);
+                message.send_async(&mut socket).await.unwrap();
+            }
             FetchUTXOs(key) => {}
             NewBlock(block) => {}
             NewTransaction(tx) => {}
