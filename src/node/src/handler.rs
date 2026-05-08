@@ -44,7 +44,18 @@ pub async fn handle_connection(mut socket: TcpStream) {
                 let message = Difference(count);
                 message.send_async(&mut socket).await.unwrap();
             }
-            FetchUTXOs(key) => {}
+            FetchUTXOs(key) => {
+                println!("received  request to fetch UTXOs");
+                let blockchain = crate::BLOCKCHAIN.read().await;
+                let utxos = blockchain
+                    .utxos()
+                    .iter()
+                    .filter(|(_, (_, txout))| txout.pubkey == key)
+                    .map(|(_, (marked, txout))| (txout.clone(), *marked))
+                    .collect::<Vec<_>>();
+                let message = UTXOs(utxos);
+                message.send_async(&mut socket).await.unwrap();
+            }
             NewBlock(block) => {}
             NewTransaction(tx) => {}
             ValidateTemplate(block_template) => {}
