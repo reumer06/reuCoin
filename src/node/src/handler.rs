@@ -63,7 +63,14 @@ pub async fn handle_connection(mut socket: TcpStream) {
                     println!("block rejected");
                 }
             }
-            NewTransaction(tx) => {}
+            NewTransaction(tx) => {
+                let mut blockchain = crate::BLOCKCHAIN.write().await;
+                println!("received transaction from friend");
+                if blockchain.add_to_mempool(tx).is_err() {
+                    println!("transaction rejected, closing connection");
+                    return;
+                }
+            }
             ValidateTemplate(block_template) => {}
             SubmitTemplate(block) => {}
             SubmitTransaction(tx) => {}
