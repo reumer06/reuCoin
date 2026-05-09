@@ -56,7 +56,13 @@ pub async fn handle_connection(mut socket: TcpStream) {
                 let message = UTXOs(utxos);
                 message.send_async(&mut socket).await.unwrap();
             }
-            NewBlock(block) => {}
+            NewBlock(block) => {
+                let mut blockchain = crate::BLOCKCHAIN.write().await;
+                println!("received new block");
+                if blockchain.add_blocks(block).is_err() {
+                    println!("block rejected");
+                }
+            }
             NewTransaction(tx) => {}
             ValidateTemplate(block_template) => {}
             SubmitTemplate(block) => {}
