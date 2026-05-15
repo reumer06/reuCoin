@@ -71,7 +71,17 @@ pub async fn handle_connection(mut socket: TcpStream) {
                     return;
                 }
             }
-            ValidateTemplate(block_template) => {}
+            ValidateTemplate(block_template) => {
+                let blockchain = crate::BLOCKCHAIN.read().await;
+                let status = block_template.header.prev_block_hash
+                    == blockchain
+                        .blocks()
+                        .last()
+                        .map(|last_blocks| last_blocks.hash())
+                        .unwrap_or(Hash::zero());
+                let message = TemplateValidity(status);
+                message.send_async(&mut socket).await.unwrap();
+            }
             SubmitTemplate(block) => {}
             SubmitTransaction(tx) => {}
             FetchTemplate(pubkey) => {}
