@@ -3,6 +3,7 @@ use lib::network::Message;
 use lib::sha256::Hash;
 use lib::types::{Block, BlockHeader, Transaction, TransactionOutput};
 use lib::util::MerkleRoot;
+use std::path::Prefix::Verbatim;
 use tokio::net::TcpStream;
 use uuid::Uuid;
 
@@ -82,7 +83,29 @@ pub async fn handle_connection(mut socket: TcpStream) {
                 let message = TemplateValidity(status);
                 message.send_async(&mut socket).await.unwrap();
             }
-            SubmitTemplate(block) => {}
+            SubmitTemplate(block) => {
+                println!("received allegedly mined template");
+                let mut blockchain = crate::BLOCKCHAIN.write().await;
+                if let Err(e) = blockchain.add_blocks(block.clone()) {
+                    println!("block rejected: {e}, closing connection");
+                    return;
+                }
+                blockchain.rebuild_utxos();
+                println!("blocks looks good!, broadcasting");
+                // send block to all friend nodes
+                let nodes = crate::NODES
+                    .iter()
+                    .map(|x| x.key().clone())
+                    .collect::<Vec<_>>();
+                for node in nodes {
+                    if let Some(mut stream) = crate::NODES.get_mut(&node) {
+                        let message = Message::NewBlock(block.clone());
+                        if message.send_async(&mut *stream).await.is_err() {
+                            println!("failed to send block: {}", node);
+                        }
+                    }
+                }
+            }
             SubmitTransaction(tx) => {}
             FetchTemplate(pubkey) => {}
         }
