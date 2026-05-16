@@ -129,7 +129,61 @@ pub async fn handle_connection(mut socket: TcpStream) {
                 }
                 println!("transaction send to friends");
             }
-            FetchTemplate(pubkey) => {}
+            FetchTemplate(pubkey) => {
+                let blockchain = crate::BLOCKCHAIN.read().await;
+                let mut transactions = vec![];
+                // insert transaction to mempool
+                transactions.extend(
+                    blockchain
+                        .mempool()
+                        .iter()
+                        .take(lib::BLOCK_TRANSACTION_CAP)
+                        .map(|(_, tx)| tx)
+                        .cloned()
+                        .collect::<Vec<_>>(),
+                );
+                // insert coinbase tx with pubkey
+                transactions.insert(
+                    0,
+                    Transaction {
+                        inputs: vec![],
+                        outputs: vec![TransactionOutput {
+                            pubkey,
+                            unique_id: Uuid::new_v4(),
+                            value: 0,
+                        }],
+                    },
+                );
+                let merkle_root = MerkleRoot::calculate(&transactions);
+                let mut block = Block::new(
+                    BlockHeader {
+                        timestamp: Utc::now(),
+                        prev_block_hash: blockchain
+                            .blocks()
+                            .last()
+                            .map(|last_block| last_block.hash())
+                            .unwrap_or(Hash::zero()),
+                        nonce: 0,
+                        target: blockchain.target(),
+                        merkle_root,
+                    },
+                    transactions,
+                );
+                let miner_fees = match block.calculate_miner_fess(blockchain.utxos()) {
+                    Ok(fees) => fees,
+                    Err(e) => {
+                        eprintln!("{e}");
+                        return;
+                    }
+                };
+                let reward = blockchain.calculate_block_reward();
+                // update coinbase tx with reward
+                block.transactions[0].outputs[0].value = reward + miner_fees;
+                // recalculate merkle root
+                block.header.merkle_root = MerkleRoot::calculate(&block.transactions);
+                let message = Template(block);
+                message.send_async(&mut socket).await.unwrap();
+            }
         }
     }
 }
