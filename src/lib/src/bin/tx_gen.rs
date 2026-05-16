@@ -15,7 +15,7 @@ fn main() {
     let transaction = Transaction::new(
         vec![],
         vec![TransactionOutput {
-            unique_key: Uuid::new_v4(),
+            unique_id: Uuid::new_v4(),
             value: lib::INITIAL_REWARD * 10u64.pow(8),
             pubkey: private_key.public_key(),
         }],
