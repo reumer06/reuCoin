@@ -3,7 +3,6 @@ use lib::network::Message;
 use lib::sha256::Hash;
 use lib::types::{Block, BlockHeader, Transaction, TransactionOutput};
 use lib::util::MerkleRoot;
-use std::path::Prefix::Verbatim;
 use tokio::net::TcpStream;
 use uuid::Uuid;
 
@@ -106,7 +105,30 @@ pub async fn handle_connection(mut socket: TcpStream) {
                     }
                 }
             }
-            SubmitTransaction(tx) => {}
+            SubmitTransaction(tx) => {
+                println!("submit tx");
+                let mut blockchain = crate::BLOCKCHAIN.write().await;
+                if let Err(e) = blockchain.add_to_mempool(tx.clone()) {
+                    println!("transaction rejected, closing connection : {e}");
+                    return;
+                }
+                println!("added transaction to mempool");
+                // send transaction to all friend nodes
+                let nodes = crate::NODES
+                    .iter()
+                    .map(|x| x.key().clone())
+                    .collect::<Vec<_>>();
+                for node in nodes {
+                    println!("sending to friend: {node}");
+                    if let Some(mut stream) = crate::NODES.get_mut(&node) {
+                        let message = Message::NewTransaction(tx.clone());
+                        if message.send_async(&mut *stream).await.is_err() {
+                            println!("failed to send transaction : {}", node);
+                        }
+                    }
+                }
+                println!("transaction send to friends");
+            }
             FetchTemplate(pubkey) => {}
         }
     }
