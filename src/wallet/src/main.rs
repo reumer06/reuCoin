@@ -1,12 +1,13 @@
 mod core;
 use anyhow::Result;
 use clap::{Parser, Subcommand};
+use core::{Config, FeeConfig, FeeType, Recipient};
 use kanal::bounded;
 use lib::types::Transaction;
 use std::io::{self, Write};
 use std::path::PathBuf;
 use tokio::time::{self, Duration};
-
+use toml;
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
@@ -16,6 +17,31 @@ struct Cli {
     config: Option<PathBuf>,
     #[arg(short, long, value_name = "ADDRESS")]
     node: Option<String>,
+}
+
+fn generate_dummy_config(path: PathBuf) -> Result<()> {
+    let dummy_config = Config {
+        my_keys: vec![],
+        contacts: vec![
+            Recipient {
+                name: "Alice".to_string(),
+                key: PathBuf::from("alice.pub.pem"),
+            },
+            Recipient {
+                name: "Bob".to_string(),
+                key: PathBuf::from("bob.pub.pem"),
+            },
+        ],
+        default_node: "127.0.0.1:9000".to_string(),
+        fee_config: FeeConfig {
+            fee_type: FeeType::Percent,
+            value: 0.1,
+        },
+    };
+    let config_str = toml::to_string_pretty(&dummy_config)?;
+    std::fs::write(&path, config_str)?;
+    println!("Dummy config generated at : {}", path.display());
+    Ok(())
 }
 
 #[derive(Subcommand)]
