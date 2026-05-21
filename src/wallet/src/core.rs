@@ -1,12 +1,13 @@
 use anyhow::Result;
 use crossbeam_skiplist::SkipMap;
+use kanal::AsyncSender;
 use lib::crypto::{PrivateKey, PublicKey};
 use lib::network::Message;
 use lib::types::{Transaction, TransactionOutput};
 use lib::util::Saveable;
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::net::TcpStream;
 
@@ -73,4 +74,25 @@ struct UtxoStore {
 impl UtxoStore {
     fn new() -> Self {}
     fn add_key(&mut self, key: LoadedKey) {}
+}
+
+pub struct Core {
+    pub config: Config,
+    utxos: UtxoStore,
+    pub tx_sender: AsyncSender<Transaction>,
+}
+
+impl Core {
+    fn new() -> Self {}
+    pub fn load(config_path: PathBuf) -> Result<Self> {}
+    pub async fn fetch_utxos(&self) -> Result<()> {}
+    pub async fn send_transaction(&self, transaction: Transaction) -> Result<()> {}
+    pub fn get_balance(&self) -> u64 {}
+    pub async fn create_transaction(
+        &self,
+        recipient: &PublicKey,
+        amount: u64,
+    ) -> Result<Transaction> {
+    }
+    fn calculate_fee(&self, amount: u64) -> u64 {}
 }
