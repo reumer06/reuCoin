@@ -63,3 +63,14 @@ pub struct Config {
     pub default_node: String,
     pub fee_config: FeeConfig,
 }
+
+#[derive(Clone)]
+struct UtxoStore {
+    my_keys: Vec<LoadedKey>,
+    utxos: Arc<SkipMap<PublicKey, Vec<(bool, TransactionOutput)>>>,
+}
+
+impl UtxoStore {
+    fn new() -> Self {}
+    fn add_key(&mut self, key: LoadedKey) {}
+}
