@@ -90,8 +90,25 @@ pub struct Core {
 }
 
 impl Core {
-    fn new() -> Self {}
-    pub fn load(config_path: PathBuf) -> Result<Self> {}
+    fn new(config: Config, utxo_store: UtxoStore) -> Self {
+        let (tx_sender, _) = kanal::bounded(10);
+        Core {
+            config,
+            utxos,
+            tx_sender: tx_sender.clone_async(),
+        }
+    }
+    pub fn load(config_path: PathBuf) -> Result<Self> {
+        let config: Config = toml::from_str(&fs::read_to_string(&config_path)?)?;
+        let mut utxos = UtxoStore::new();
+        // Load keys from config
+        for key in &config.my_keys {
+            let mut public = PublicKey::load_from_file(&key.public)?;
+            let private = PrivateKey::load_from_file(&key.private)?;
+            utxos.add_key(LoadedKey { public, private });
+        }
+        Ok(Core::new(config, utxos))
+    }
     pub async fn fetch_utxos(&self) -> Result<()> {}
     pub async fn send_transaction(&self, transaction: Transaction) -> Result<()> {}
     pub fn get_balance(&self) -> u64 {}
