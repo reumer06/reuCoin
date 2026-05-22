@@ -130,6 +130,9 @@ impl Core {
         Ok(())
     }
     pub async fn send_transaction(&self, transaction: Transaction) -> Result<()> {
+        let mut stream = TcpStream::connect(&self.config.default_node).await?;
+        let message = Message::SubmitTransaction(transaction);
+        message.send_async(&mut stream).await?;
         Ok(())
     }
     pub fn get_balance(&self) -> u64 {}
