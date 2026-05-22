@@ -72,8 +72,15 @@ struct UtxoStore {
 }
 
 impl UtxoStore {
-    fn new() -> Self {}
-    fn add_key(&mut self, key: LoadedKey) {}
+    fn new() -> Self {
+        UtxoStore {
+            my_keys: Vec::new(),
+            utxos: Arc::new(SkipMap::new()),
+        }
+    }
+    fn add_key(&mut self, key: LoadedKey) {
+        self.my_keys.push(key)
+    }
 }
 
 pub struct Core {
