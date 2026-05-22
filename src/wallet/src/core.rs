@@ -10,6 +10,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::net::TcpStream;
+use tokio::net::windows::named_pipe::PipeMode::Message;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Key {
@@ -109,8 +110,28 @@ impl Core {
         }
         Ok(Core::new(config, utxos))
     }
-    pub async fn fetch_utxos(&self) -> Result<()> {}
-    pub async fn send_transaction(&self, transaction: Transaction) -> Result<()> {}
+    pub async fn fetch_utxos(&self) -> Result<()> {
+        let mut stream = TcpStream::connect(&self.config.default_node).await?;
+        for key in &self.utxos.my_keys {
+            let message = Message::FetchUTXOs(key.public.clone());
+            message.send_async(&mut stream).await?;
+            if let Message::UTXOs(utxos) = Message::receive_async(&mut stream).await? {
+                self.utxos.utxos.insert(
+                    key.public.clone(),
+                    utxos
+                        .into_iter()
+                        .map(|(output, marked)| (marked, output))
+                        .collect(),
+                );
+            } else {
+                return Err(anyhow::anyhow!("Unexpected response from the node"));
+            }
+        }
+        Ok(())
+    }
+    pub async fn send_transaction(&self, transaction: Transaction) -> Result<()> {
+        Ok(())
+    }
     pub fn get_balance(&self) -> u64 {}
     pub async fn create_transaction(
         &self,
@@ -118,5 +139,5 @@ impl Core {
         amount: u64,
     ) -> Result<Transaction> {
     }
-    fn calculate_fee(&self, amount: u64) -> u64 {}
+    fn calculate_fee(&self, amount: u64) -> u64 {} {
 }
