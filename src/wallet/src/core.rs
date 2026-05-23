@@ -41,7 +41,6 @@ impl Recipient {
         let key = PublicKey::load_from_file(&self.key)?;
         Ok(LoadedRecipient {
             name: self.name.clone(),
-
             key,
         })
     }
@@ -84,6 +83,7 @@ impl UtxoStore {
     }
 }
 
+#[derive(Clone)]
 pub struct Core {
     pub config: Config,
     utxos: UtxoStore,
@@ -95,7 +95,7 @@ impl Core {
         let (tx_sender, _) = kanal::bounded(10);
         Core {
             config,
-            utxos,
+            utxos: utxo_store,
             tx_sender: tx_sender.clone_async(),
         }
     }
@@ -104,7 +104,7 @@ impl Core {
         let mut utxos = UtxoStore::new();
         // Load keys from config
         for key in &config.my_keys {
-            let mut public = PublicKey::load_from_file(&key.public)?;
+            let public = PublicKey::load_from_file(&key.public)?;
             let private = PrivateKey::load_from_file(&key.private)?;
             utxos.add_key(LoadedKey { public, private });
         }
@@ -135,51 +135,82 @@ impl Core {
         message.send_async(&mut stream).await?;
         Ok(())
     }
-    pub fn get_balance(&self) -> u64 {}
+    pub fn get_balance(&self) -> u64 {
+        self.utxos
+            .utxos
+            .iter()
+            .map(|entry| entry.value().iter().map(|utxo| utxo.1.value).sum::<u64>())
+            .sum()
+    }
+
     pub async fn create_transaction(
         &self,
         recipient: &PublicKey,
         amount: u64,
     ) -> Result<Transaction> {
         let fee = self.calculate_fee(amount);
-        let total_amount = amount  + fee;
+        let total_amount = amount + fee;
         let mut inputs = Vec::new();
         let mut input_sum = 0;
+
         for entry in self.utxos.utxos.iter() {
             let pubkey = entry.key();
-            let utxos  = entry.value();
-            for (marked,utxo) in utxos.iter() {
+            let utxos = entry.value();
+
+            for (marked, utxo) in utxos.iter() {
                 if *marked {
                     continue;
                 }
-                if input_sum  >= total_amount {
+                if input_sum >= total_amount {
                     break;
                 }
+
+                input_sum += utxo.value;
+
                 inputs.push(lib::types::TransactionInput {
-                    prev_transaction_output_hash : utxo.hash(),
-                    signature : lib::crypto::Signature::sign_output( &utxo.hash(),&self.utxos.my_keys.iter().find(|k| k.public == *pubkey).unwrap().private)
+                    prev_transaction_output_hash: utxo.hash(),
+                    signature: lib::crypto::Signature::sign_output(
+                        &utxo.hash(),
+                        &self
+                            .utxos
+                            .my_keys
+                            .iter()
+                            .find(|k| k.public == *pubkey)
+                            .unwrap()
+                            .private,
+                    ),
                 });
             }
             if input_sum >= total_amount {
                 break;
             }
         }
-        if  input_sum < total_amount {
+
+        if input_sum < total_amount {
             return Err(anyhow::anyhow!("Insufficient funds"));
         }
-        let mut outputs  = vec![TransactionOutput {
-            value : amount,
-            unique_id :uuid::Uuid::new_v4(),
-            pubkey : recipient.clone()
+
+        let mut outputs = vec![TransactionOutput {
+            value: amount,
+            unique_id: uuid::Uuid::new_v4(),
+            pubkey: recipient.clone(),
         }];
+
         if input_sum > total_amount {
             outputs.push(TransactionOutput {
-                value : input_sum - total_amount,
-                unique_id : uuid::Uuid::new_v4(),
-                pubkey : self.utxos.my_keys[0].public.clone()
+                value: input_sum - total_amount,
+                unique_id: uuid::Uuid::new_v4(),
+                pubkey: self.utxos.my_keys[0].public.clone(),
             });
         }
-        Ok(Transaction::new(inputs,outputs))
+
+        Ok(Transaction::new(inputs, outputs))
     }
-    fn calculate_fee(&self, amount: u64) -> u64 {} {
+
+    fn calculate_fee(&self, amount: u64) -> u64 {
+        match self.config.fee_config.fee_type {
+            FeeType::Fixed => self.config.fee_config.value as u64,
+            FeeType::Percent => ((amount * self.config.fee_config.value as u64) / 100),
+        }
+    }
 }
