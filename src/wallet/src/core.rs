@@ -10,7 +10,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::net::TcpStream;
-use tokio::net::windows::named_pipe::PipeMode::Message;
+use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Key {
@@ -141,6 +141,45 @@ impl Core {
         recipient: &PublicKey,
         amount: u64,
     ) -> Result<Transaction> {
+        let fee = self.calculate_fee(amount);
+        let total_amount = amount  + fee;
+        let mut inputs = Vec::new();
+        let mut input_sum = 0;
+        for entry in self.utxos.utxos.iter() {
+            let pubkey = entry.key();
+            let utxos  = entry.value();
+            for (marked,utxo) in utxos.iter() {
+                if *marked {
+                    continue;
+                }
+                if input_sum  >= total_amount {
+                    break;
+                }
+                inputs.push(lib::types::TransactionInput {
+                    prev_transaction_output_hash : utxo.hash(),
+                    signature : lib::crypto::Signature::sign_output( &utxo.hash(),&self.utxos.my_keys.iter().find(|k| k.public == *pubkey).unwrap().private)
+                });
+            }
+            if input_sum >= total_amount {
+                break;
+            }
+        }
+        if  input_sum < total_amount {
+            return Err(anyhow::anyhow!("Insufficient funds"));
+        }
+        let mut outputs  = vec![TransactionOutput {
+            value : amount,
+            unique_id :uuid::Uuid::new_v4(),
+            pubkey : recipient.clone()
+        }];
+        if input_sum > total_amount {
+            outputs.push(TransactionOutput {
+                value : input_sum - total_amount,
+                unique_id : uuid::Uuid::new_v4(),
+                pubkey : self.utxos.my_keys[0].public.clone()
+            });
+        }
+        Ok(Transaction::new(inputs,outputs))
     }
     fn calculate_fee(&self, amount: u64) -> u64 {} {
 }
