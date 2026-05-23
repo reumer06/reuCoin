@@ -11,8 +11,7 @@ use spki::EncodePublicKey;
 use std::io::{Error as IoError, ErrorKind as IoErrorKind, Read, Result as IoResult, Write};
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Signature(ECDSASignature<Secp256k1>);
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Ord, PartialOrd, Eq)]
 pub struct PublicKey(VerifyingKey<Secp256k1>);
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PrivateKey(#[serde(with = "signkey_serde")] pub SigningKey<Secp256k1>); //  use serialize and deserialize from this mod.
