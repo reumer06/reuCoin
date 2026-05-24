@@ -1,0 +1,14 @@
+[package]
+name = "node"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.102"
+argh = "0.1.19"
+chrono = "0.4.44"
+dashmap = "6.1.0"
+lib = { version = "0.1.0", path = "../lib" }
+static_init = "1.0.4"
+tokio = { version = "1.52.1", features = ["full"] }
+uuid = { version = "1.23.1", features = ["v4"] }
