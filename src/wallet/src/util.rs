@@ -15,3 +15,12 @@ pub fn setup_tracing() -> Result<()> {
         .init();
     Ok(())
 }
+
+pub fn setup_panic_hook() {
+    panic::set_hook(Box::new(|panic_info| {
+        let backtrace = std::backtrace::Backtrace::force_capture();
+        error!("Application panicked!");
+        error!("Panic info: {}", panic_info);
+        error!("Backtrace: {}", backtrace);
+    }));
+}
