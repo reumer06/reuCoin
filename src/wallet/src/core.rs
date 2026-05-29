@@ -7,10 +7,9 @@ use lib::types::{Transaction, TransactionOutput};
 use lib::util::Saveable;
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::net::TcpStream;
-use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Key {
@@ -210,7 +209,7 @@ impl Core {
     fn calculate_fee(&self, amount: u64) -> u64 {
         match self.config.fee_config.fee_type {
             FeeType::Fixed => self.config.fee_config.value as u64,
-            FeeType::Percent => ((amount * self.config.fee_config.value as u64) / 100),
+            FeeType::Percent => (amount * self.config.fee_config.value as u64) / 100,
         }
     }
 }
