@@ -3,7 +3,6 @@ use argh::FromArgs;
 use dashmap::DashMap;
 use lib::types::Blockchain;
 use static_init::dynamic;
-use std::fmt::format;
 use std::path::Path;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::RwLock;
