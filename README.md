@@ -1,4 +1,4 @@
-# 🪙 reuCoin
+# reuCoin
 
 A minimalist, educational blockchain built from scratch in Rust.
 
