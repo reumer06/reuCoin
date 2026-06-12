@@ -1,10 +1,8 @@
 # reuCoin
 
-A minimalist blockchain built from scratch in Rust.
+A minimalist blockchain built from scratch in Rust. 
 
-This project serves as a hands-on learning tool designed to demystify the core mechanics of cryptocurrency systems. It
-features a simplified implementation of proof-of-work mining, transaction lifecycle management, and an interactive
-command-line wallet.
+This project serves as to demystify the core mechanics of cryptocurrency systems. It features a simplified implementation of proof-of-work mining, transaction handling, and a CLI wallet.
 
 ## 📂Project Structure
 
